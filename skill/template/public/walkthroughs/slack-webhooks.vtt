@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:08.549
+This is the other way to connect Slack. A webhook is a private web address that posts into one specific channel. You make one for each channel.
+
+00:00:08.749 --> 00:00:14.219
+Open your Slack app. In the left menu choose Incoming Webhooks, and switch it on.
+
+00:00:14.419 --> 00:00:20.721
+Press Add New Webhook to Workspace. Choose the channel you want reports to land in, and press Allow.
+
+00:00:20.921 --> 00:00:28.418
+Slack gives you a Webhook URL. Press Copy. Treat it like a password, because anyone who has it can post in that channel.
+
+00:00:28.618 --> 00:00:38.355
+On the settings page, open Prefer webhooks, and paste the address into the matching box. Repeat for each channel, press Save Slack, then Send test messages.
+
+00:00:38.555 --> 00:00:43.726
+That is it. One webhook for each channel, and your reports will start arriving.

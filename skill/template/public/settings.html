@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Settings</title>
+<script src="/auth.js" data-allow="owner"></script>
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg-card: #fafafa; --bg-elevated: #f5f5f5; --border: #e5e5e5;
+    --text: #0a0a0a; --text-dim: #525252; --text-faint: #a3a3a3;
+    --green: #10B981; --red: #EF4444; --yellow: #F59E0B;
+    --accent: #EF4444;
+  }
+  body { font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px 20px 80px; }
+  .container { max-width: 860px; margin: 0 auto; }
+  .header { padding: 16px 0 12px; }
+  .header__brand { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+  .header__title { font-size: 22px; font-weight: 700; }
+  .header__sub { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+
+  .nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; }
+  .nav a { padding: 10px 18px; color: var(--text-dim); text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+  .nav a:hover { color: var(--text); }
+  .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .jump { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .jump a { font-size: 12px; font-weight: 600; color: var(--text-dim); text-decoration: none; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; }
+  .jump a:hover { border-color: var(--accent); color: var(--accent); }
+
+  .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; scroll-margin-top: 12px; }
+  .panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .panel__desc { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.5; }
+  .panel__foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .save-msg { font-size: 13px; color: var(--text-dim); margin-right: auto; }
+  .save-msg.ok { color: var(--green); }
+  .save-msg.fail { color: var(--red); }
+
+  .guide { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+  .guide > summary { font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); margin: 0; }
+  .guide ol { margin: 10px 0 2px 20px; }
+  .guide li { font-size: 13px; line-height: 1.55; color: var(--text-dim); margin-bottom: 6px; }
+  .guide li strong, .guide p strong { color: var(--text); font-weight: 600; }
+  .guide p { font-size: 13px; line-height: 1.55; color: var(--text-dim); margin-top: 10px; }
+  /* walkthrough video at the top of a guide */
+  .video { margin: 12px 0 4px; }
+  .video:empty { display: none; }
+  .video video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #04101F; border: 1px solid var(--border); }
+  .video__cap { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+  a.ext { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  code { background: var(--bg-elevated); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+
+  .sub { margin-top: 18px; }
+  .sub:first-child { margin-top: 0; }
+  .sub h3 { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 16px; }
+  .grid .field { margin-bottom: 0; }
+  .grid .field.wide { grid-column: 1 / -1; }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field__top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  label, .label { font-size: 13px; font-weight: 600; }
+  .badge { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .badge.saved { background: rgba(16,185,129,0.12); color: var(--green); }
+  .badge.env { background: rgba(16,185,129,0.12); color: var(--green); }
+  .badge.unset { background: var(--bg-elevated); color: var(--text-faint); }
+  .badge.remove { background: rgba(239,68,68,0.12); color: var(--red); }
+  input[type=text], input[type=password], input[type=number], select, textarea {
+    width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit;
+  }
+  textarea { min-height: 96px; resize: vertical; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 12px; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .field.error input, .field.error textarea, .field.error select { border-color: var(--red); }
+  .field__help { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+  .field__error { font-size: 12px; color: var(--red); margin-top: 6px; }
+  .field__error:empty { display: none; }
+  .field__row { display: flex; gap: 8px; align-items: center; }
+  .field__row > :first-child { flex: 1; min-width: 0; }
+  .share { margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+
+  button { font-family: inherit; cursor: pointer; }
+  .btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: var(--bg); color: var(--text); white-space: nowrap; }
+  .btn:hover { border-color: var(--text-dim); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.ghost { border-color: transparent; color: var(--text-dim); padding: 8px 10px; }
+  .btn.ghost:hover { color: var(--red); }
+
+  .btn.eye { padding: 0; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-dim); flex: none; }
+  .btn.eye svg { width: 19px; height: 19px; }
+  .btn.eye .off { display: none; }
+  .btn.eye[aria-pressed="true"] .on { display: none; }
+  .btn.eye[aria-pressed="true"] .off { display: block; }
+  .test { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .test__result { font-size: 13px; line-height: 1.4; flex: 1; min-width: 200px; }
+  .test__result.ok { color: var(--green); }
+  .test__result.fail { color: var(--red); }
+
+  /* choice pills: roles and weekdays */
+  .choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choice { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 13px; font-weight: 600; color: var(--text-dim); cursor: pointer; user-select: none; }
+  .choice input { position: absolute; opacity: 0; pointer-events: none; }
+  .choice.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
+  .choice:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* people + chips */
+  .people { margin-top: 4px; }
+  .people__role { margin-top: 18px; }
+  .people__role h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .person { display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(120px, 1fr) auto auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .person .remind { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text-dim); white-space: nowrap; }
+  .adder { display: flex; gap: 8px; }
+  .adder input { flex: 1; min-width: 0; }
+  .none-yet { font-size: 12px; color: var(--text-faint); margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 12px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); font-size: 13px; font-weight: 600; }
+  .chip button { border: none; background: none; color: var(--text-faint); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 999px; }
+  .chip button:hover { color: var(--red); }
+  @media (max-width: 560px) { .person { grid-template-columns: 1fr auto; } .person .mention { grid-column: 1 / -1; grid-row: 2; } }
+
+  .color-row { display: flex; gap: 10px; align-items: center; }
+  .color-row input[type=color] { width: 52px; height: 42px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); cursor: pointer; }
+  .color-row input[type=text] { max-width: 140px; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+  /* targets: one column per role, one tidy row per target */
+  .tcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; align-items: start; }
+  .tcol { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .tcol h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); padding: 10px 14px; background: var(--bg-elevated); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+  .tcol h3 span { font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-faint); }
+  .trow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 8px 14px; min-height: 60px; border-bottom: 1px solid var(--border); margin: 0; }
+  .trow:last-child { border-bottom: none; }
+  .trow label { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .trow label small { display: block; font-size: 11.5px; font-weight: 400; color: var(--text-dim); }
+  .tinput { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); overflow: hidden; }
+  .tinput:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .tinput input { width: 78px; border: none; border-radius: 0; padding: 8px 6px 8px 10px; text-align: right; font-variant-numeric: tabular-nums; outline: none; }
+  .tinput span { font-size: 12px; color: var(--text-dim); padding: 0 10px 0 2px; white-space: nowrap; min-width: 44px; }
+  .tinput span.pre { padding: 0 0 0 10px; min-width: 0; }
+  .trow.error .tinput { border-color: var(--red); }
+  .trow .field__error { grid-column: 1 / -1; margin-top: 0; }
+  /* logins */
+  .login { display: grid; grid-template-columns: minmax(140px, 1.2fr) minmax(140px, 1.4fr) auto auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); margin-bottom: 8px; }
+  .login__name { font-weight: 600; font-size: 14px; }
+  .login__user { font-size: 13px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .login__sub { font-size: 12px; color: var(--text-dim); }
+  .login__reset { grid-column: 1 / -1; display: flex; gap: 8px; }
+  .login__reset input { flex: 1; min-width: 0; }
+  .role-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
+  .role-chip.owner { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 620px) { .login { grid-template-columns: 1fr auto; } .login__user { grid-column: 1 / -1; grid-row: 2; } }
+  .stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 12px; }
+  details.more { margin-top: 16px; }
+  details.more > summary { font-size: 13px; font-weight: 600; color: var(--text-dim); cursor: pointer; margin-bottom: 12px; }
+
+  .banner { border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.08); }
+  .banner strong { display: block; margin-bottom: 4px; font-size: 14px; }
+  .hidden { display: none !important; }
+  /* settings shortcut, top-right corner of every page (scrolls away with the page) */
+  .gear { position: absolute; top: 24px; right: 20px; z-index: 5; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border: 1px solid var(--border, var(--rule-2, #d4d4d4)); border-radius: 10px; background: var(--bg-card, var(--sheet, transparent));
+    color: var(--text-dim, var(--ink-2, #525252)); text-decoration: none; }
+  .gear:hover, .gear[aria-current] { color: var(--accent); border-color: var(--accent); }
+  .gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .gear svg { width: 19px; height: 19px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header__brand" id="brandName">EOD System</div>
+    <div class="header__title">Settings</div>
+    <div class="header__sub">Only the owner can open this page. Connect your accounts, set up your team and give people logins. Each section saves on its own; keys are encrypted and never shown again after saving.</div>
+  </div>
+
+  <div id="settings" class="hidden">
+    <div id="storageBanner" class="banner hidden">
+      <strong>Storage isn’t connected yet</strong>
+      You can look around, but nothing can be saved until storage is attached to this site: in Vercel open the project →
+      Storage → Upstash → Redis → connect, then redeploy.
+    </div>
+
+    <div class="jump" aria-label="Jump to a section">
+      <a href="#p-sheets">Google Sheets</a><a href="#p-slack">Slack</a><a href="#p-discord">Discord</a><a href="#p-team">Team</a><a href="#p-logins">Logins</a>
+      <a href="#p-targets">Targets</a><a href="#p-reminders">Reminders &amp; scorecard</a><a href="#p-crm">CRM</a>
+      <a href="#p-mechanisms">Mechanisms</a><a href="#p-brand">Branding</a>
+    </div>
+
+    <!-- ── Google Sheets ── -->
+    <form class="panel" id="p-sheets" data-group="sheets" autocomplete="off" novalidate>
+      <h2>Google Sheets</h2>
+      <p class="panel__desc">Required. Every report is stored as a row in a Google Sheet that you own. You give this system a “service account”, which is a robot Google login that is allowed to write to that one sheet.</p>
+      <details class="guide" data-guide-for="SPREADSHEET_ID,GOOGLE_SERVICE_ACCOUNT_KEY">
+        <summary>How to set this up (about 5 minutes)</summary>
+        <div class="video" data-video="sheets"></div>
+        <ol>
+          <li><strong>Create the sheet.</strong> <a class="ext" href="https://sheets.new" target="_blank" rel="noopener">Open a new Google Sheet</a>, give it a name, then copy the address from the browser bar and paste it into <strong>Google Sheet link</strong> below.</li>
+          <li><strong>Create a Google Cloud project</strong> (free). <a class="ext" href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">Open “New project”</a>, name it anything, press Create.</li>
+          <li><strong>Switch on the Sheets API.</strong> <a class="ext" href="https://console.cloud.google.com/apis/library/sheets.googleapis.com" target="_blank" rel="noopener">Open the Google Sheets API page</a> and press Enable.</li>
+          <li><strong>Create the service account.</strong> <a class="ext" href="https://console.cloud.google.com/iam-admin/serviceaccounts/create" target="_blank" rel="noopener">Open “Create service account”</a>, give it a name, press Create and continue, then Done (skip the optional steps).</li>
+          <li><strong>Download its key.</strong> In the <a class="ext" href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener">service accounts list</a> click the one you just made → <strong>Keys</strong> tab → Add key → Create new key → <strong>JSON</strong> → Create. A <code>.json</code> file downloads. Open it with a text editor, select everything, copy, and paste it into <strong>Service account key</strong> below.</li>
+          <li><strong>Save</strong>, then share the sheet. After saving, a green box below shows the service account’s email. In your Google Sheet press Share, paste that email, choose <strong>Editor</strong>, and send.</li>
+          <li>Press <strong>Test connection</strong>. The tabs and column headings are created automatically the first time a report is filed.</li>
+        </ol>
+      </details>
+      <div class="fields"></div>
+      <div class="test"><button type="button" class="btn" data-test="sheets">Test connection</button><span class="test__result" data-result="sheets"></span></div>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save Google Sheets</button></div>
+    </form>
+
+    <!-- ── Slack ── -->
+    <form class="panel" id="p-slack" data-group="slack" autocomplete="off" novalidate>
+      <h2>Slack</h2>
+      <p class="panel__desc">Optional. Reports are posted to Slack as they’re filed, along with the daily scorecard and reminders. Everything is already formatted. You create a small Slack app once and paste its token here.</p>
+      <details class="guide" data-guide-for="SLACK_BOT_TOKEN">
+        <summary>How to get your Slack bot token (about 3 minutes)</summary>
+        <div class="video" data-video="slack"></div>
+        <ol>
+          <li><a class="ext" href="https://api.slack.com/apps?new_app=1" target="_blank" rel="noopener">Open “Create a Slack app”</a> → choose <strong>From scratch</strong> → name it (e.g. “EOD Reports”) → pick your workspace → Create App.</li>
+          <li>In the left menu open <strong>OAuth &amp; Permissions</strong>. Scroll to <strong>Scopes → Bot Token Scopes</strong> and add these four: <code>chat:write</code> <code>chat:write.public</code> <code>channels:read</code> <code>groups:read</code></li>
+          <li>Scroll back up and press <strong>Install to Workspace</strong> → Allow.</li>
+          <li>Copy the <strong>Bot User OAuth Token</strong> (it starts with <code>xoxb-</code>) and paste it into <strong>Bot token</strong> below. Press <strong>Save Slack</strong>.</li>
+          <li>Press <strong>Connect &amp; load channels</strong>. The four boxes turn into lists of your real channels. Pick where each report should go, then <strong>Save Slack</strong> again.</li>
+          <li>Press <strong>Send test messages</strong> and check each channel.</li>
+        </ol>
+        <p><strong>Private channel?</strong> In that channel type <code>/invite @your-app-name</code> first, or the app can’t post there.</p>
+      </details>
+      <div class="fields"></div>
+      <div class="test">
+        <button type="button" class="btn" data-test="slack">Connect &amp; load channels</button>
+        <button type="button" class="btn" data-test="slack_send">Send test messages</button>
+        <span class="test__result" data-result="slack"></span>
+      </div>
+      <details class="more">
+        <summary>Prefer webhooks? Use one web address per channel instead of a bot token</summary>
+        <div class="guide">
+          <div class="video" data-video="slack-webhooks"></div>
+          <p><strong>What is a webhook?</strong> A private web address that posts into one specific channel. Anyone with the address can post there, so treat it like a password.</p>
+          <ol>
+            <li><a class="ext" href="https://api.slack.com/apps" target="_blank" rel="noopener">Open your Slack apps</a> and pick your app (or create one as above; webhooks need no scopes).</li>
+            <li>Left menu → <strong>Incoming Webhooks</strong> → switch it <strong>On</strong>.</li>
+            <li>Press <strong>Add New Webhook to Workspace</strong> → choose the channel → Allow. Copy the <strong>Webhook URL</strong> (starts with <code>https://hooks.slack.com/</code>).</li>
+            <li>Paste it in the matching box below. Repeat for each channel you want.</li>
+          </ol>
+        </div>
+        <div class="fields-advanced"></div>
+      </details>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save Slack</button></div>
+    </form>
+
+    <!-- ── Discord ── -->
+    <form class="panel" id="p-discord" data-group="discord" autocomplete="off" novalidate>
+      <h2>Discord</h2>
+      <p class="panel__desc">Optional. Same as Slack, for a Discord server. The quickest route is a webhook per channel, which is a private web address that posts into that one channel.</p>
+      <details class="guide" data-guide-for="DISCORD_SETTER_WEBHOOK,DISCORD_DIALLER_WEBHOOK,DISCORD_CLOSER_WEBHOOK,DISCORD_SCORECARD_WEBHOOK,DISCORD_BOT_TOKEN">
+        <summary>How to get a Discord webhook (about 1 minute per channel)</summary>
+        <div class="video" data-video="discord"></div>
+        <ol>
+          <li>In Discord, hover the channel you want reports in and click the <strong>cog (Edit Channel)</strong>. You need the “Manage Webhooks” permission.</li>
+          <li>Open <strong>Integrations</strong> → <strong>Webhooks</strong> → <strong>New Webhook</strong>.</li>
+          <li>Name it (e.g. “EOD Reports”), then press <strong>Copy Webhook URL</strong>. It starts with <code>https://discord.com/api/webhooks/</code>.</li>
+          <li>Paste it in the matching box below. Repeat for each channel. You can reuse one channel for several reports by pasting the same address.</li>
+          <li>Press <strong>Save Discord</strong>, then <strong>Send test messages</strong>.</li>
+        </ol>
+        <p>Treat a webhook address like a password: anyone who has it can post in that channel.</p>
+      </details>
+      <div class="fields"></div>
+      <div class="test">
+        <button type="button" class="btn" data-test="discord_send">Send test messages</button>
+        <span class="test__result" data-result="discord"></span>
+      </div>
+      <details class="more">
+        <summary>Prefer a bot? Use one bot token and pick channels from a list</summary>
+        <div class="guide">
+          <div class="video" data-video="discord-bot"></div>
+          <ol>
+            <li><a class="ext" href="https://discord.com/developers/applications" target="_blank" rel="noopener">Open the Discord Developer Portal</a> → <strong>New Application</strong> → name it → Create.</li>
+            <li>Left menu → <strong>Bot</strong> → <strong>Reset Token</strong> → copy the token and paste it into <strong>Bot token</strong> below.</li>
+            <li>Left menu → <strong>OAuth2</strong> → URL Generator → tick <code>bot</code>, then tick <strong>View Channels</strong>, <strong>Send Messages</strong> and <strong>Embed Links</strong>. Open the generated link and add the bot to your server.</li>
+            <li>Press <strong>Save Discord</strong>, then <strong>Connect &amp; load channels</strong>, pick a channel for each report, and save again.</li>
+          </ol>
+        </div>
+        <div class="fields-advanced"></div>
+        <div class="test"><button type="button" class="btn" data-test="discord">Connect &amp; load channels</button></div>
+      </details>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save Discord</button></div>
+    </form>
+
+    <!-- ── Team ── -->
+    <form class="panel" id="p-team" data-group="team" autocomplete="off" novalidate>
+      <h2>Team</h2>
+      <p class="panel__desc">Who files reports. Adding names turns the name box on each report into a pick-list, so one person never shows up under three spellings. It is also who reminders chase. Names are saved as soon as you add or remove them.</p>
+      <details class="guide">
+        <summary>Optional: make reminders @mention people</summary>
+        <div class="video" data-video="team"></div>
+        <p>A reminder only notifies someone if it has their member ID. Paste it in the “ID” box next to their name.</p>
+        <ol>
+          <li><strong>Slack:</strong> click the person’s profile → the <strong>⋮ More</strong> button → <strong>Copy member ID</strong>. It looks like <code>U01ABC2345</code>.</li>
+          <li><strong>Discord:</strong> turn on User Settings → Advanced → <strong>Developer Mode</strong>, then right-click the person → <strong>Copy User ID</strong>. It’s a long number.</li>
+        </ol>
+        <p>Using both Slack and Discord? Put both IDs in the box, separated by a comma. Untick “Remind” for anyone who should be on the list but never chased.</p>
+      </details>
+      <div class="fields"></div>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save team</button></div>
+    </form>
+
+    <!-- ── Logins ── -->
+    <section class="panel" id="p-logins">
+      <h2>Logins</h2>
+      <p class="panel__desc">Who can sign in, and what they see. You are the owner: the only login that can open Settings. Give everyone else their own login below.</p>
+      <div class="guide">
+        <p><strong>Manager:</strong> sees every dashboard and scorecard and can file any report. No access to Settings.</p>
+        <p><strong>Setter, Dialler, Closer:</strong> sees only Submit EOD, with only their own report, and their own scorecard. Their name is filled in for them.</p>
+      </div>
+      <div id="loginList"></div>
+      <form id="loginAdd" class="sub" autocomplete="off" novalidate>
+        <h3>Add a login</h3>
+        <div class="grid">
+          <div class="field"><div class="field__top"><label for="la_name">Name</label></div><input type="text" id="la_name" placeholder="Jo Lee"></div>
+          <div class="field"><div class="field__top"><label for="la_user">Email or username</label></div><input type="text" id="la_user" placeholder="jo@yourcompany.com" autocapitalize="none" spellcheck="false"></div>
+          <div class="field"><div class="field__top"><label for="la_role">Role</label></div><select id="la_role"></select></div>
+          <div class="field" id="la_personField"><div class="field__top"><label for="la_person">Files reports as</label></div><select id="la_person"></select></div>
+          <div class="field wide"><div class="field__top"><label for="la_pass">Password</label></div>
+            <div class="field__row"><input type="text" id="la_pass" placeholder="At least 8 characters" autocomplete="off" spellcheck="false"><button type="button" class="btn" id="la_gen">Generate</button></div>
+            <div class="field__help">Send them this password yourself. They can change it after signing in, and you can reset it here at any time.</div></div>
+        </div>
+        <div class="panel__foot"><span class="save-msg" id="loginMsg" role="status"></span><button class="btn primary" type="submit">Add login</button></div>
+      </form>
+      <details class="more">
+        <summary>Change my own password</summary>
+        <form id="myPassword" autocomplete="off" novalidate>
+          <div class="grid">
+            <div class="field"><div class="field__top"><label for="mp_cur">Current password</label></div><input type="password" id="mp_cur" autocomplete="current-password"></div>
+            <div class="field"><div class="field__top"><label for="mp_new">New password</label></div><input type="password" id="mp_new" autocomplete="new-password"></div>
+          </div>
+          <div class="panel__foot"><span class="save-msg" id="myPasswordMsg" role="status"></span><button class="btn" type="submit">Change password</button></div>
+        </form>
+      </details>
+    </section>
+
+    <!-- ── Targets ── -->
+    <form class="panel" id="p-targets" data-group="targets" autocomplete="off" novalidate>
+      <h2>Targets</h2>
+      <p class="panel__desc">What each person should hit in a day. Team targets are worked out from these (target × people × days). On the scorecard every number is shown against its target: <strong style="color:#10B981">On target</strong> when it’s met, <strong style="color:#D97706">Below</strong> when within 30% of it, <strong style="color:#EF4444">Critical</strong> when further off. Enter 0 to switch a target off.</p>
+      <div class="fields"></div>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save targets</button></div>
+    </form>
+
+    <!-- ── Reminders & scorecard ── -->
+    <form class="panel" id="p-reminders" data-group="reminders" autocomplete="off" novalidate>
+      <h2>Reminders &amp; daily scorecard</h2>
+      <p class="panel__desc">Two automatic messages. Both go to the Slack or Discord channels you connected above, at the time you choose here (in your timezone, set under Branding).</p>
+      <div class="fields"></div>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save reminders &amp; scorecard</button></div>
+    </form>
+
+    <!-- ── CRM ── -->
+    <form class="panel" id="p-crm" data-group="crm" autocomplete="off" novalidate>
+      <h2>CRM</h2>
+      <p class="panel__desc">Optional. Connect your CRM to show your live sales pipeline on the EOD Deep Dive page.</p>
+      <div class="fields"></div>
+      <details class="guide" data-provider="ghl">
+        <summary>How to get your GoHighLevel token and location ID</summary>
+        <div class="video" data-video="crm-ghl"></div>
+        <ol>
+          <li><a class="ext" href="https://app.gohighlevel.com/" target="_blank" rel="noopener">Open GoHighLevel</a> and switch into the sub-account (location) your sales team uses.</li>
+          <li>Go to <strong>Settings → Private Integrations → Create new integration</strong>.</li>
+          <li>Tick these scopes: <strong>View Contacts, Edit Contacts, View Opportunities, Edit Opportunities, View Pipelines</strong> (in the list they appear as <code>contacts.readonly</code> <code>contacts.write</code> <code>opportunities.readonly</code> <code>opportunities.write</code>, plus the pipelines read scope).</li>
+          <li>Create it and copy the token (starts with <code>pit-</code>) into the box above.</li>
+          <li>For the <strong>location ID</strong>, look at the address bar while inside the sub-account: <code>app.gohighlevel.com/v2/location/<strong>THIS-PART</strong>/…</code>. You can paste the whole address.</li>
+          <li>Press <strong>Save CRM</strong>, then <strong>Connect &amp; load pipelines</strong>, choose your pipeline, and match each column to a stage.</li>
+        </ol>
+        <p>With GoHighLevel connected, logging a call outcome on the closer report also moves that prospect’s opportunity to the matching stage.</p>
+      </details>
+      <details class="guide" data-provider="close">
+        <summary>How to get your Close API key</summary>
+        <div class="video" data-video="crm-close"></div>
+        <ol>
+          <li><a class="ext" href="https://app.close.com/settings/developer/api-keys/" target="_blank" rel="noopener">Open Close → Settings → Developer → API Keys</a>.</li>
+          <li>Press <strong>New API Key</strong>, name it (e.g. “EOD Reports”), and copy the key (starts with <code>api_</code>). Close only shows it once.</li>
+          <li>Paste it above, press <strong>Save CRM</strong>, then <strong>Connect &amp; load pipelines</strong>, choose your pipeline, and match each column to one of its statuses.</li>
+        </ol>
+        <p>Close is read-only here: it shows your pipeline on the dashboard. Call outcomes logged on the closer report are not written back to Close.</p>
+      </details>
+      <div id="crmTools">
+        <div class="test"><button type="button" class="btn" id="crmTest">Connect &amp; load pipelines</button><span class="test__result" id="crmResult"></span></div>
+        <div id="pipelinePicker" class="hidden">
+          <div class="field" style="margin-top:16px">
+            <div class="field__top"><label for="pipelineSelect">Pipeline</label></div>
+            <select id="pipelineSelect"></select>
+          </div>
+          <div class="field__help">Match each dashboard column to a stage in that pipeline. Leave a column on “Not used” to hide it.</div>
+          <div class="stages" id="stagePicker"></div>
+        </div>
+        <details class="more"><summary>Advanced: pipeline and stage IDs</summary><div class="fields-advanced"></div></details>
+      </div>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save CRM</button></div>
+    </form>
+
+    <!-- ── Mechanisms ── -->
+    <form class="panel" id="p-mechanisms" data-group="mechanisms" autocomplete="off" novalidate>
+      <h2>Mechanisms</h2>
+      <p class="panel__desc">How leads reach you: webinar, DMs, a lead magnet and so on. These are the choices on the reports and the breakdown on the Overview and EOD Deep Dive pages. Add yours, remove the ones you don’t use. Changes save straight away.</p>
+      <div class="fields"></div>
+      <p class="field__help" style="margin-top:14px">Removing a mechanism doesn’t delete past reports. Old rows that used it are counted under the first mechanism in the list.</p>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save mechanisms</button></div>
+    </form>
+
+    <!-- ── Branding ── -->
+    <form class="panel" id="p-brand" data-group="brand" autocomplete="off" novalidate>
+      <h2>Branding</h2>
+      <p class="panel__desc">How the pages, reports and channel posts look.</p>
+      <div class="fields"></div>
+      <div class="panel__foot"><span class="save-msg" role="status"></span><button class="btn primary" type="submit">Save branding</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const el = (tag, props = {}, ...kids) => {
+  const n = Object.assign(document.createElement(tag), props);
+  for (const k of kids) if (k != null && k !== '') n.append(k);
+  return n;
+};
+
+const ROLES = ['setter', 'dialler', 'closer'];
+const ROLE_LABEL = { setter: 'Setters', dialler: 'Diallers', closer: 'Closers' };
+const OPTION_LABEL = { none: 'No CRM', ghl: 'GoHighLevel', close: 'Close', on: 'On', off: 'Off', '$': '$ Dollars', '£': '£ Pounds', '€': '€ Euros' };
+// The timezones info / coaching / agency businesses actually run from, by region.
+const TIMEZONES = [
+  ['United States', [['America/New_York', 'Eastern: New York, Miami'], ['America/Chicago', 'Central: Chicago, Dallas'], ['America/Denver', 'Mountain: Denver, Salt Lake City'],
+    ['America/Phoenix', 'Arizona: Phoenix (no daylight saving)'], ['America/Los_Angeles', 'Pacific: Los Angeles, Seattle'], ['America/Anchorage', 'Alaska: Anchorage'], ['Pacific/Honolulu', 'Hawaii: Honolulu']]],
+  ['Canada', [['America/Halifax', 'Atlantic: Halifax'], ['America/Toronto', 'Eastern: Toronto, Montreal'], ['America/Winnipeg', 'Central: Winnipeg'], ['America/Edmonton', 'Mountain: Calgary, Edmonton'], ['America/Vancouver', 'Pacific: Vancouver']]],
+  ['United Kingdom & Ireland', [['Europe/London', 'UK: London (GMT / BST)'], ['Europe/Dublin', 'Ireland: Dublin']]],
+  ['Europe', [['Europe/Lisbon', 'Portugal: Lisbon'], ['Europe/Madrid', 'Spain: Madrid'], ['Europe/Paris', 'France: Paris'], ['Europe/Amsterdam', 'Netherlands: Amsterdam'],
+    ['Europe/Berlin', 'Germany: Berlin'], ['Europe/Zurich', 'Switzerland: Zurich'], ['Europe/Rome', 'Italy: Rome'], ['Europe/Stockholm', 'Sweden: Stockholm'],
+    ['Europe/Warsaw', 'Poland: Warsaw'], ['Europe/Athens', 'Greece: Athens']]],
+  ['Australia', [['Australia/Sydney', 'Sydney, Canberra (AEST / AEDT)'], ['Australia/Melbourne', 'Melbourne'], ['Australia/Brisbane', 'Brisbane (no daylight saving)'],
+    ['Australia/Adelaide', 'Adelaide'], ['Australia/Darwin', 'Darwin'], ['Australia/Perth', 'Perth'], ['Australia/Hobart', 'Hobart']]],
+  ['New Zealand', [['Pacific/Auckland', 'Auckland, Wellington']]],
+  ['Middle East & Africa', [['Asia/Dubai', 'UAE: Dubai'], ['Asia/Riyadh', 'Saudi Arabia: Riyadh'], ['Asia/Jerusalem', 'Israel: Tel Aviv'], ['Africa/Johannesburg', 'South Africa: Johannesburg'], ['Africa/Lagos', 'Nigeria: Lagos']]],
+  ['Asia', [['Asia/Kolkata', 'India: Mumbai, Delhi'], ['Asia/Singapore', 'Singapore'], ['Asia/Hong_Kong', 'Hong Kong'], ['Asia/Manila', 'Philippines: Manila'], ['Asia/Tokyo', 'Japan: Tokyo']]],
+  ['Latin America', [['America/Mexico_City', 'Mexico: Mexico City'], ['America/Bogota', 'Colombia: Bogotá'], ['America/Sao_Paulo', 'Brazil: São Paulo'], ['America/Argentina/Buenos_Aires', 'Argentina: Buenos Aires']]],
+  ['Other', [['UTC', 'UTC (no local time)']]],
+];
+// "London (GMT+1)", the current offset, so the list reads the way people think about it.
+function tzOffset(zone) {
+  try {
+    const part = new Intl.DateTimeFormat('en-GB', { timeZone: zone, timeZoneName: 'shortOffset' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName');
+    return part ? part.value.replace('GMT', 'UTC') : '';
+  } catch { return ''; }
+}
+
+const DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
+
+let state = null;                 // last payload from the API
+const toClear = new Set();        // secret keys the user asked to remove
+const channelLists = {};          // provider → [{id, name}] once "Connect" has run
+const pipelineLists = {};         // crm provider → pipelines once "Connect" has run
+
+fetch('/api?action=config').then(r => r.json()).then(cfg => {
+  if (!cfg || !cfg.brand) return;
+  $('#brandName').textContent = cfg.brand.name || 'EOD System';
+  if (cfg.brand.color) document.documentElement.style.setProperty('--accent', cfg.brand.color);
+}).catch(() => {});
+
+async function api(path, body) {
+  const resp = await fetch('/api?' + path, {
+    method: body ? 'POST' : 'GET',
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await resp.json().catch(() => ({ message: 'Unexpected response from the server.' }));
+  return { code: resp.status, data };
+}
+
+// ── Start ───────────────────────────────────────────────────────────────────
+// /auth.js has already made sure the owner is signed in before anything shows.
+async function start() {
+  const { code, data } = await api('action=settings');
+  if (code === 401) { location.replace('/login?next=/settings'); return; }
+  if (code !== 200) return;      // not the owner, /auth.js is already sending them to their own home
+  $('#settings').classList.remove('hidden');
+  state = data;
+  $('#storageBanner').classList.toggle('hidden', data.storage !== 'none');
+  for (const panel of $$('.panel[data-group]')) renderPanel(panel.dataset.group);
+  loadLogins();
+  loadSavedChannels();
+}
+
+// A bot that is already connected shows its channels by name straight away, so a saved
+// channel never appears as a raw ID.
+async function loadSavedChannels() {
+  for (const provider of ['slack', 'discord']) {
+    if (![...$$(`[data-picker="${provider}"]`)].some(i => i.value)) continue;
+    const { data } = await api('source=settings_test', { target: provider });
+    if (data && data.ok && data.channels) { channelLists[provider] = data.channels; applyChannels(provider); }
+  }
+}
+
+// ── Field values ────────────────────────────────────────────────────────────
+// What is in force right now: the saved value, else the built-in default.
+const current = (f) => (f.secret ? '' : (f.value || state.effective[f.key] || ''));
+const rolesInUse = () => state.report_roles;
+
+// A hidden input that carries a widget's value under the real setting name.
+function carrier(f) {
+  const input = el('input', { type: 'hidden', name: f.key, value: current(f) });
+  input.dataset.initial = input.value;
+  return input;
+}
+const touched = (input) => input.dispatchEvent(new Event('input', { bubbles: true }));
+
+// ── Widgets ─────────────────────────────────────────────────────────────────
+const WIDGETS = {
+  // Pills for setter / dialler / closer.
+  roles(f) {
+    const input = carrier(f);
+    const picked = new Set(input.value.split(',').filter(Boolean));
+    const box = el('div', { className: 'choices' });
+    for (const role of ROLES) {
+      const check = el('input', { type: 'checkbox', checked: picked.has(role) });
+      const pill = el('label', { className: 'choice' + (check.checked ? ' on' : '') }, check, ROLE_LABEL[role]);
+      if (f.key !== 'REPORT_ROLES') pill.dataset.role = role;     // can't remind a role you don't have
+      check.onchange = () => {
+        check.checked ? picked.add(role) : picked.delete(role);
+        pill.classList.toggle('on', check.checked);
+        input.value = ROLES.filter(r => picked.has(r)).join(',');
+        touched(input);
+      };
+      box.append(pill);
+    }
+    return [box, input];
+  },
+
+  days(f) {
+    const input = carrier(f);
+    const picked = new Set(input.value.split(',').filter(Boolean).map(Number));
+    const box = el('div', { className: 'choices' });
+    for (const [n, name] of DAYS) {
+      const check = el('input', { type: 'checkbox', checked: picked.has(n) });
+      const pill = el('label', { className: 'choice' + (check.checked ? ' on' : '') }, check, name);
+      check.onchange = () => {
+        check.checked ? picked.add(n) : picked.delete(n);
+        pill.classList.toggle('on', check.checked);
+        input.value = [...picked].sort((a, b) => a - b).join(',');
+        touched(input);
+      };
+      box.append(pill);
+    }
+    return [box, input];
+  },
+
+  hour(f) {
+    const select = el('select', { name: f.key, id: 'f_' + f.key });
+    for (let h = 0; h < 24; h++) {
+      const label = `${String(h).padStart(2, '0')}:00  (${h % 12 || 12} ${h < 12 ? 'am' : 'pm'})`;
+      select.append(el('option', { value: String(h), textContent: label }));
+    }
+    select.value = current(f);
+    select.dataset.initial = select.value;
+    return [select];
+  },
+
+  timezone(f) {
+    const select = el('select', { name: f.key, id: 'f_' + f.key });
+    const cur = current(f);
+    let known = false;
+    for (const [region, zones] of TIMEZONES) {
+      const group = el('optgroup', { label: region });
+      for (const [zone, label] of zones) {
+        const off = tzOffset(zone);
+        group.append(el('option', { value: zone, textContent: off ? `${label}  (${off})` : label }));
+        if (zone === cur) known = true;
+      }
+      select.append(group);
+    }
+    // a timezone set at setup that isn't on the list stays selectable rather than vanishing
+    if (cur && !known) select.prepend(el('option', { value: cur, textContent: `${cur}  (${tzOffset(cur)})` }));
+    select.value = cur;
+    select.dataset.initial = select.value;
+    return [select];
+  },
+
+  toggle(f) {
+    const select = el('select', { name: f.key, id: 'f_' + f.key });
+    select.append(el('option', { value: 'on', textContent: 'On' }), el('option', { value: 'off', textContent: 'Off' }));
+    select.value = current(f) || 'on';
+    select.dataset.initial = select.value;
+    return [select];
+  },
+
+  color(f) {
+    const text = el('input', { type: 'text', name: f.key, id: 'f_' + f.key, value: current(f), spellcheck: false, maxLength: 7 });
+    text.dataset.initial = text.value;
+    const hex = (v) => (/^#[0-9a-fA-F]{6}$/.test(v) ? v : '#000000');
+    const picker = el('input', { type: 'color', value: hex(text.value), ariaLabel: 'Pick a colour' });
+    const preview = (v) => document.documentElement.style.setProperty('--accent', v);
+    picker.oninput = () => { text.value = picker.value.toUpperCase(); preview(picker.value); touched(text); };
+    text.oninput = () => { if (/^#[0-9a-fA-F]{6}$/.test(text.value)) { picker.value = text.value; preview(text.value); } };
+    return [el('div', { className: 'color-row' }, picker, text)];
+  },
+
+  // A list you add to and remove from. Saves as soon as it changes.
+  chips(f) {
+    const input = carrier(f);
+    const items = input.value.split(',').map(s => s.trim()).filter(Boolean);
+    const list = el('div', { className: 'chips' });
+    const draw = () => {
+      list.replaceChildren(...items.map((item, i) => el('span', { className: 'chip' }, item,
+        el('button', { type: 'button', textContent: '×', ariaLabel: `Remove ${item}`, onclick: () => { items.splice(i, 1); commit(); } }))));
+      if (!items.length) list.append(el('span', { className: 'none-yet', textContent: 'None yet.' }));
+    };
+    const commit = () => { input.value = items.join(','); draw(); touched(input); savePanel(f.group); };
+    const box = el('input', { type: 'text', placeholder: 'Type a name and press Add', ariaLabel: `Add to ${f.label}` });
+    const add = () => {
+      const v = box.value.replace(/,/g, ' ').trim();
+      if (!v) return;
+      box.value = '';
+      if (items.some(x => x.toLowerCase() === v.toLowerCase())) return;
+      items.push(v); commit();
+    };
+    box.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } };
+    draw();
+    return [list, el('div', { className: 'adder' }, box, el('button', { type: 'button', className: 'btn', textContent: 'Add', onclick: add })), input];
+  },
+
+  // People per role: add, remove, optional mention ID, optional "don't remind".
+  roster(f) {
+    const input = carrier(f);
+    let roster = {};
+    try { roster = JSON.parse(input.value || '{}') || {}; } catch {}
+    for (const role of ROLES) roster[role] = (roster[role] || []).map(p => (typeof p === 'string' ? { name: p } : { ...p }));
+    const wrap = el('div', { className: 'people' });
+    const error = el('div', { className: 'field__error', role: 'alert' });
+
+    const write = () => {
+      const empty = ROLES.every(r => !roster[r].length);
+      input.value = empty ? '' : JSON.stringify(roster);
+      touched(input);
+    };
+    const parseIds = (person, raw) => {
+      delete person.slack; delete person.discord;
+      for (const part of raw.split(',').map(s => s.trim()).filter(Boolean)) {
+        if (/^[UW][A-Z0-9]{6,}$/.test(part)) person.slack = part;
+        else if (/^\d{15,22}$/.test(part)) person.discord = part;
+        else return `“${part}” isn’t a Slack member ID (like U01ABC2345) or a Discord user ID (a long number).`;
+      }
+      return '';
+    };
+
+    const drawRole = (role, block) => {
+      const rows = roster[role].map((person, i) => {
+        const name = el('input', { type: 'text', value: person.name, ariaLabel: 'Name' });
+        name.onchange = () => { if (name.value.trim()) { person.name = name.value.trim(); write(); } else name.value = person.name; };
+        const ids = el('input', { type: 'text', className: 'mention', value: [person.slack, person.discord].filter(Boolean).join(', '),
+          placeholder: 'ID for @mentions (optional)', ariaLabel: `Mention ID for ${person.name}` });
+        ids.onchange = () => { error.textContent = parseIds(person, ids.value); if (!error.textContent) write(); };
+        const remind = el('input', { type: 'checkbox', checked: person.nudge !== false });
+        remind.onchange = () => { if (remind.checked) delete person.nudge; else person.nudge = false; write(); };
+        const remove = el('button', { type: 'button', className: 'btn ghost', textContent: 'Remove', ariaLabel: `Remove ${person.name}`,
+          onclick: () => { roster[role].splice(i, 1); drawRole(role, block); write(); savePanel('team'); } });
+        return el('div', { className: 'person' }, name, ids, el('label', { className: 'remind' }, remind, 'Remind'), remove);
+      });
+      const one = role;
+      const box = el('input', { type: 'text', placeholder: `Add a ${one}’s name`, ariaLabel: `Add a ${one}` });
+      box.dataset.adder = role;
+      const add = () => {
+        const v = box.value.trim();
+        if (!v) return;
+        if (roster[role].some(p => p.name.toLowerCase() === v.toLowerCase())) { error.textContent = `${v} is already on the list.`; return; }
+        error.textContent = '';
+        roster[role].push({ name: v });
+        drawRole(role, block); write();
+        // the card re-renders after saving, so put the cursor back in this role's box
+        savePanel('team').then(() => { const again = $(`[data-adder="${role}"]`); if (again) again.focus(); });
+      };
+      box.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } };
+      block.replaceChildren(
+        el('h3', { textContent: `${ROLE_LABEL[role]} (${roster[role].length})` }),
+        ...(rows.length ? rows : [el('div', { className: 'none-yet', textContent: `No ${ROLE_LABEL[role].toLowerCase()} added. The report will have a free-text name box.` })]),
+        el('div', { className: 'adder' }, box, el('button', { type: 'button', className: 'btn', textContent: `Add ${one}`, onclick: add })));
+    };
+
+    for (const role of ROLES) {
+      const block = el('div', { className: 'people__role' });
+      block.dataset.role = role;
+      drawRole(role, block);
+      wrap.append(block);
+    }
+    return [wrap, error, input];
+  },
+};
+
+// ── Field rendering ─────────────────────────────────────────────────────────
+function sourceBadge(f) {
+  if (f.source === 'saved') return ['saved', 'Saved'];
+  if (f.source === 'env') return ['env', 'Set at setup'];
+  return ['unset', !f.secret && state.effective[f.key] ? 'Default' : 'Not set'];
+}
+
+function plainControl(f) {
+  let input;
+  if (f.options) {
+    input = el('select');
+    for (const o of f.options) input.append(el('option', { value: o, textContent: OPTION_LABEL[o] || o }));
+    const v = current(f);
+    if (v && !f.options.includes(v)) input.append(el('option', { value: v, textContent: v }));   // keep a custom saved value
+    input.value = v || f.options[0];
+  } else if (f.multiline) {
+    input = el('textarea', { spellcheck: false });
+  } else {
+    input = el('input', { type: f.secret ? 'password' : 'text', spellcheck: false });
+    if (!f.secret) input.value = current(f);
+  }
+  input.id = 'f_' + f.key;
+  input.name = f.key;
+  input.autocomplete = f.secret ? 'new-password' : 'off';
+  input.dataset.initial = f.secret ? '' : (input.value || '');
+  input.placeholder = f.secret && f.hint ? `Saved (${f.hint}). Leave blank to keep`
+    : f.picker ? 'Connect first to pick from a list' : f.placeholder;
+  if (f.picker) input.dataset.picker = f.picker;
+  return input;
+}
+
+// Show / hide button for a key or password box, so what was pasted can be checked.
+const EYE = '<svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>'
+  + '<svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.7 8.5 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 5.4-1.5"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+function eyeFor(input, label) {
+  const eye = el('button', { type: 'button', className: 'btn eye', innerHTML: EYE });
+  const paint = (shown) => {
+    input.type = shown ? 'text' : 'password';
+    eye.setAttribute('aria-pressed', String(shown));
+    eye.setAttribute('aria-label', `${shown ? 'Hide' : 'Show'} ${label}`);
+    eye.title = shown ? 'Hide' : 'Show';
+  };
+  eye.onclick = () => paint(input.type === 'password');
+  paint(false);
+  return eye;
+}
+
+function fieldNode(f) {
+  const [kind, text] = sourceBadge(f);
+  const badge = el('span', { className: 'badge ' + kind, textContent: text });
+  const node = el('div', { className: 'field' });
+  node.dataset.key = f.key;
+  if (f.role) node.dataset.role = f.role;
+  if (f.provider) node.dataset.provider = f.provider;
+  if (['days', 'roles', 'roster', 'chips'].includes(f.widget)) node.classList.add('wide');
+
+  if (f.widget && WIDGETS[f.widget]) {
+    const forId = ['hour', 'toggle', 'color', 'timezone'].includes(f.widget) ? 'f_' + f.key : '';
+    const label = forId ? el('label', { htmlFor: forId, textContent: f.label }) : el('div', { className: 'label', textContent: f.label });
+    node.append(el('div', { className: 'field__top' }, label, f.widget === 'roster' ? null : badge), ...WIDGETS[f.widget](f));
+  } else {
+    const input = plainControl(f);
+    const row = el('div', { className: 'field__row' }, input);
+    if (f.secret && !f.multiline) row.append(eyeFor(input, f.label));
+    if (f.secret && f.source === 'saved') {
+      const remove = el('button', { type: 'button', className: 'btn ghost', textContent: 'Remove' });
+      remove.onclick = () => {
+        const removing = !toClear.has(f.key);
+        removing ? toClear.add(f.key) : toClear.delete(f.key);
+        input.disabled = removing;
+        if (removing) input.value = '';
+        badge.className = 'badge ' + (removing ? 'remove' : kind);
+        badge.textContent = removing ? 'Will be removed' : text;
+        remove.textContent = removing ? 'Undo' : 'Remove';
+        say(node.closest('.panel'), 'Unsaved changes');
+      };
+      row.append(remove);
+    }
+    node.append(el('div', { className: 'field__top' }, el('label', { htmlFor: input.id, textContent: f.label }), badge), row);
+  }
+  if (f.help) node.append(el('div', { className: 'field__help', textContent: f.help }));
+  // The one thing people miss: the sheet must be shared with this exact address.
+  if (f.key === 'GOOGLE_SERVICE_ACCOUNT_KEY' && f.hint && f.hint.includes('@')) {
+    node.append(el('div', { className: 'share' }, 'Share your Google Sheet with this address as Editor: ', el('strong', { textContent: f.hint })));
+  }
+  node.append(el('div', { className: 'field__error', role: 'alert' }));
+  return node;
+}
+
+// One target: label on the left, a small number box with its unit on the right.
+const UNIT_TEXT = { day: 'per day', pct: '%', min: 'min' };
+function targetRow(f) {
+  const input = el('input', { type: 'text', inputMode: 'decimal', name: f.key, id: 'f_' + f.key, value: current(f), autocomplete: 'off' });
+  input.dataset.initial = input.value;
+  const box = el('div', { className: 'tinput' });
+  if (f.unit === 'money') box.append(el('span', { className: 'pre', textContent: state.effective.CURRENCY_SYMBOL || '$' }), input, el('span', { textContent: 'per day' }));
+  else box.append(input, el('span', { textContent: UNIT_TEXT[f.unit] || '' }));
+  const label = el('label', { htmlFor: input.id }, f.label, f.help ? el('small', { textContent: f.help }) : null);
+  const row = el('div', { className: 'field trow' }, label, box, el('div', { className: 'field__error', role: 'alert' }));
+  row.dataset.key = f.key;
+  return row;
+}
+
+function renderTargets(panel) {
+  const main = $('.fields', panel);
+  const cols = el('div', { className: 'tcols' });
+  const byRole = new Map();
+  for (const f of state.fields.filter(x => x.group === 'targets')) {
+    if (!byRole.has(f.sub)) {
+      const col = el('div', { className: 'tcol' }, el('h3', {}, f.sub, el('span', { textContent: 'per person' })));
+      col.dataset.role = f.role;
+      byRole.set(f.sub, col);
+      cols.append(col);
+    }
+    byRole.get(f.sub).append(targetRow(f));
+  }
+  main.replaceChildren(cols);
+}
+
+function renderPanel(group) {
+  const panel = $(`.panel[data-group="${group}"]`);
+  const main = $('.fields', panel), advanced = $('.fields-advanced', panel);
+  main.replaceChildren();
+  if (advanced) advanced.replaceChildren();
+  const subs = new Map();      // sub-heading → its grid
+
+  if (group === 'targets') renderTargets(panel);
+  else for (const f of state.fields.filter(x => x.group === group)) {
+    toClear.delete(f.key);
+    const node = fieldNode(f);
+    if (f.advanced && advanced) { advanced.append(node); continue; }
+    if (!f.sub) { main.append(node); continue; }
+    if (!subs.has(f.sub)) {
+      const grid = el('div', { className: 'grid' });
+      const sub = el('div', { className: 'sub' }, el('h3', { textContent: f.sub }), grid);
+      if (f.role) sub.dataset.role = f.role;
+      subs.set(f.sub, grid);
+      main.append(sub);
+    }
+    subs.get(f.sub).append(node);
+  }
+
+  $('.panel__foot .btn', panel).disabled = state.storage === 'none';
+  for (const guide of $$('.guide[data-guide-for]', panel)) {
+    // open the walkthrough until the thing it explains has been filled in
+    const keys = guide.dataset.guideFor.split(',');
+    guide.open = !state.fields.some(f => keys.includes(f.key) && f.source !== 'unset');
+  }
+  if (group === 'slack' || group === 'discord') applyChannels(group);
+  if (group === 'crm') {
+    $('#f_CRM_PROVIDER').addEventListener('change', syncProvider);
+    syncProvider();
+  }
+  applyVisibility();
+}
+
+// Hide anything that belongs to a role this business doesn't have. Hidden, not removed
+// switching the role back on under Team brings it straight back.
+function applyVisibility() {
+  for (const node of $$('#settings [data-role]')) node.classList.toggle('hidden', !rolesInUse().includes(node.dataset.role));
+}
+
+// ── Save (one card at a time) ───────────────────────────────────────────────
+function pending(panel) {
+  const values = {}, clear = [];
+  for (const input of $$('[name]', panel)) {
+    if (toClear.has(input.name)) { clear.push(input.name); continue; }
+    if (input.disabled) continue;
+    const v = input.value.trim();
+    if (v && v !== input.dataset.initial) values[input.name] = v;
+    // Emptying a plain field means "go back to the default". (Secrets start blank, so for
+    // those blank means "keep" and removal is the Remove button.)
+    else if (!v && input.dataset.initial) clear.push(input.name);
+  }
+  return { values, clear };
+}
+
+function say(panel, text, kind = '') {
+  const m = $('.save-msg', panel);
+  m.textContent = text;
+  m.className = 'save-msg ' + kind;
+}
+
+async function savePanel(group) {
+  const panel = $(`.panel[data-group="${group}"]`);
+  const body = pending(panel);
+  for (const f of $$('.field.error', panel)) { f.classList.remove('error'); $('.field__error', f).textContent = ''; }
+  if (!Object.keys(body.values).length && !body.clear.length) { say(panel, 'No changes to save.'); return true; }
+
+  const button = $('.panel__foot .btn', panel);
+  button.disabled = true;
+  say(panel, 'Saving…');
+  const { code, data } = await api('source=settings', body);
+  button.disabled = false;
+
+  if (code === 200) {
+    state = data;
+    renderPanel(group);          // only this card, unsaved edits in other cards are left alone
+    if (group === 'team') paintLoginForm();
+    say(panel, `Saved at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`, 'ok');
+    if (group === 'brand' && data.effective.BRAND_NAME) $('#brandName').textContent = data.effective.BRAND_NAME;
+    return true;
+  }
+  if (code === 401) { location.reload(); return false; }
+  let first = null;
+  for (const [key, message] of Object.entries(data.fields || {})) {
+    const node = $(`.field[data-key="${key}"]`, panel);
+    if (!node) continue;
+    node.classList.add('error');
+    $('.field__error', node).textContent = message;
+    first = first || node;
+  }
+  if (first) {
+    if (first.closest('details')) first.closest('details').open = true;
+    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  say(panel, data.message || 'Could not save.', 'fail');
+  return false;
+}
+
+for (const panel of $$('.panel[data-group]')) {
+  panel.addEventListener('submit', (e) => { e.preventDefault(); savePanel(panel.dataset.group); });
+  panel.addEventListener('input', () => say(panel, 'Unsaved changes'));
+}
+
+// ── Connection tests (save that card first, so the test runs on what's on screen) ──
+const TEST_PANEL = { sheets: 'sheets', slack: 'slack', slack_send: 'slack', discord: 'discord', discord_send: 'discord', ghl: 'crm', close: 'crm' };
+
+async function runTest(target, out) {
+  out.className = 'test__result';
+  out.textContent = 'Testing…';
+  if (!(await savePanel(TEST_PANEL[target]))) { out.textContent = ''; return; }
+  const { data } = await api('source=settings_test', { target });
+  out.classList.add(data.ok ? 'ok' : 'fail');
+  out.textContent = data.message || 'No response.';
+  if (!data.ok) return;
+  if (data.pipelines) { pipelineLists[target] = data.pipelines; renderPipelines(); }
+  if (data.channels) { channelLists[target] = data.channels; applyChannels(target); }
+}
+
+for (const btn of $$('[data-test]')) {
+  btn.addEventListener('click', () => runTest(btn.dataset.test, $(`[data-result="${btn.dataset.test.replace('_send', '')}"]`)));
+}
+$('#crmTest').addEventListener('click', () => runTest($('#f_CRM_PROVIDER').value, $('#crmResult')));
+
+// Swap each channel-ID box for a dropdown of the provider's real channels.
+function applyChannels(provider) {
+  const channels = channelLists[provider];
+  if (!channels) return;
+  for (const input of $$(`[data-picker="${provider}"]`)) {
+    const cur = input.value;
+    const select = el('select', { id: input.id, name: input.name });
+    select.dataset.picker = provider;
+    select.dataset.initial = input.dataset.initial;
+    select.append(el('option', { value: '', textContent: 'Not connected' }));
+    for (const c of channels) select.append(el('option', { value: c.id, textContent: c.name }));
+    // keep a saved ID the bot can no longer see, rather than silently dropping it
+    if (cur && !channels.some(c => c.id === cur)) select.append(el('option', { value: cur, textContent: `${cur} (not visible to the bot)` }));
+    select.value = cur;
+    input.replaceWith(select);
+  }
+}
+
+// ── CRM: provider switch + pipeline / stage picker ──────────────────────────
+const crmProvider = () => $('#f_CRM_PROVIDER').value;
+const crmField = (suffix) => $(`#f_${crmProvider().toUpperCase()}_${suffix}`);
+
+function syncProvider() {
+  const provider = crmProvider();
+  for (const node of $$('#p-crm [data-provider]')) node.classList.toggle('hidden', node.dataset.provider !== provider);
+  $('#crmTools').classList.toggle('hidden', provider === 'none');
+  $('#crmResult').textContent = '';
+  renderPipelines();
+}
+
+const norm = (s) => String(s).toLowerCase().replace(/[^a-z]/g, '');
+function currentStages() {
+  try { return JSON.parse(crmField('STAGES_JSON').value || '{}') || {}; } catch { return {}; }
+}
+
+function renderPipelines() {
+  const pipelines = pipelineLists[crmProvider()];
+  $('#pipelinePicker').classList.toggle('hidden', !pipelines);
+  if (!pipelines) return;
+  const select = $('#pipelineSelect');
+  select.replaceChildren(el('option', { value: '', textContent: 'Choose a pipeline…' }));
+  for (const p of pipelines) select.append(el('option', { value: p.id, textContent: p.name }));
+  const cur = crmField('PIPELINE_ID').value;
+  select.value = pipelines.some(p => p.id === cur) ? cur : '';
+  select.onchange = () => { renderStages(true); writePicker(); };
+  renderStages(false);
+}
+
+// guess: pre-select a stage whose name matches the column when nothing is mapped yet.
+function renderStages(guess) {
+  const pipeline = (pipelineLists[crmProvider()] || []).find(p => p.id === $('#pipelineSelect').value);
+  const box = $('#stagePicker');
+  box.replaceChildren();
+  if (!pipeline) return;
+  const mapped = guess ? {} : currentStages();
+  for (const key of state.stage_keys) {
+    const label = state.stage_labels[key] || key;
+    const select = el('select', { id: 'stage_' + key });
+    select.dataset.stageKey = key;
+    select.append(el('option', { value: '', textContent: 'Not used' }));
+    for (const s of pipeline.stages) select.append(el('option', { value: s.id, textContent: s.name }));
+    const match = pipeline.stages.find(s => s.id === mapped[key]) || (guess && pipeline.stages.find(s => norm(s.name) === norm(label)));
+    select.value = match ? match.id : '';
+    select.onchange = writePicker;
+    box.append(el('div', { className: 'field' }, el('div', { className: 'field__top' }, el('label', { htmlFor: select.id, textContent: label })), select));
+  }
+}
+
+// Push the picker's choices into the real (advanced) fields that get saved.
+function writePicker() {
+  crmField('PIPELINE_ID').value = $('#pipelineSelect').value;
+  const stages = {};
+  for (const select of $$('#stagePicker select')) if (select.value) stages[select.dataset.stageKey] = select.value;
+  const field = crmField('STAGES_JSON');
+  field.value = Object.keys(stages).length ? JSON.stringify(stages) : '';
+  touched(field);
+}
+
+// ── Walkthrough videos ──────────────────────────────────────────────────────
+// Each guide has a narrated video of the same steps. Nothing is downloaded until play
+// is pressed. If the videos aren't part of this deployment, the slots simply stay empty.
+fetch('/walkthroughs/index.json').then(r => (r.ok ? r.json() : null)).then((manifest) => {
+  if (!manifest) return;
+  for (const slot of $$('.video[data-video]')) {
+    const id = slot.dataset.video, info = manifest.videos[id];
+    if (!info) continue;
+    const video = el('video', { controls: true, preload: 'none', playsInline: true, poster: `/walkthroughs/${id}.jpg` },
+      el('source', { src: `/walkthroughs/${id}.mp4`, type: 'video/mp4' }),
+      el('track', { kind: 'captions', src: `/walkthroughs/${id}.vtt`, srclang: 'en', label: 'English', default: true }));
+    video.setAttribute('aria-label', `Video walkthrough: ${info.title}`);
+    const mins = `${Math.floor(info.seconds / 60)}:${String(info.seconds % 60).padStart(2, '0')}`;
+    slot.replaceChildren(video, el('div', { className: 'video__cap', textContent: `Video walkthrough · ${info.title} · ${mins} · the written steps are below` }));
+  }
+}).catch(() => {});
+
+// ── Logins ──────────────────────────────────────────────────────────────────
+const ROLE_ONE = { owner: 'Owner', manager: 'Manager', setter: 'Setter', dialler: 'Dialler', closer: 'Closer' };
+const loginSay = (text, kind = '') => { const m = $('#loginMsg'); m.textContent = text; m.className = 'save-msg ' + kind; };
+const newPassword = () => {
+  // readable and hard to guess: 4 groups of 4, no look-alike characters
+  const set = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', bytes = crypto.getRandomValues(new Uint8Array(16));
+  return [...bytes].map((b, i) => (i && i % 4 === 0 ? '-' : '') + set[b % set.length]).join('');
+};
+function rosterFor(role) {
+  try { return ((JSON.parse(state.effective.ROSTER_JSON || (state.fields.find(f => f.key === 'ROSTER_JSON') || {}).value || '{}') || {})[role] || []).map(p => (typeof p === 'string' ? p : p.name)); }
+  catch { return []; }
+}
+
+// Role and "files reports as" pickers on the add form.
+function paintLoginForm() {
+  const role = $('#la_role'), keep = role.value;
+  role.replaceChildren(el('option', { value: 'manager', textContent: 'Manager (sees everything except Settings)' }),
+    ...rolesInUse().map(r => el('option', { value: r, textContent: `${ROLE_ONE[r]} (only their own report)` })));
+  if ([...role.options].some(o => o.value === keep)) role.value = keep;
+  const rep = role.value !== 'manager', names = rep ? rosterFor(role.value) : [];
+  $('#la_personField').classList.toggle('hidden', !rep);
+  $('#la_person').replaceChildren(el('option', { value: '', textContent: 'The name typed above' }), ...names.map(n => el('option', { value: n, textContent: n })));
+  // if their name is on the team list, link to it so their reports line up
+  const typed = $('#la_name').value.trim().toLowerCase();
+  const match = names.find(n => n.toLowerCase() === typed);
+  if (match) $('#la_person').value = match;
+}
+$('#la_role').addEventListener('change', paintLoginForm);
+$('#la_name').addEventListener('input', paintLoginForm);
+$('#la_gen').onclick = () => { $('#la_pass').value = newPassword(); };
+
+async function loadLogins() {
+  paintLoginForm();
+  const { code, data } = await api('action=users');
+  if (code !== 200) { $('#loginList').replaceChildren(el('div', { className: 'none-yet', textContent: data.message || 'Could not load the logins.' })); return; }
+  $('#loginList').replaceChildren(...data.users.map(loginRow));
+}
+
+function loginRow(u) {
+  const row = el('div', { className: 'login' },
+    el('div', {}, el('div', { className: 'login__name', textContent: u.name }),
+      u.person && u.person !== u.name ? el('div', { className: 'login__sub', textContent: `files reports as ${u.person}` }) : null),
+    el('div', { className: 'login__user', textContent: u.username }),
+    el('span', { className: 'role-chip ' + u.role, textContent: ROLE_ONE[u.role] }));
+  const actions = el('div', { className: 'field__row' });
+  const reset = el('button', { type: 'button', className: 'btn ghost', textContent: 'Reset password' });
+  reset.onclick = () => {
+    if ($('.login__reset', row)) { $('.login__reset', row).remove(); return; }
+    const box = el('input', { type: 'text', value: newPassword(), ariaLabel: `New password for ${u.name}`, spellcheck: false });
+    const go = el('button', { type: 'button', className: 'btn', textContent: 'Set this password' });
+    go.onclick = async () => {
+      const { code, data } = await api('source=user_save', { id: u.id, name: u.name, username: u.username, role: u.role, person: u.person, password: box.value });
+      loginSay(code === 200 ? `Password reset for ${u.name}. Send it to them: ${box.value}` : (data.message || 'Could not reset.'), code === 200 ? 'ok' : 'fail');
+      if (code === 200) loadLogins();
+    };
+    row.append(el('div', { className: 'login__reset' }, box, go));
+    box.select();
+  };
+  actions.append(reset);
+  if (u.role !== 'owner') {
+    const remove = el('button', { type: 'button', className: 'btn ghost', textContent: 'Remove', ariaLabel: `Remove ${u.name}’s login` });
+    remove.onclick = async () => {
+      if (remove.dataset.sure !== '1') { remove.dataset.sure = '1'; remove.textContent = 'Really remove?'; return; }
+      const { code, data } = await api('source=user_delete', { id: u.id });
+      loginSay(code === 200 ? `${u.name} can no longer sign in.` : (data.message || 'Could not remove.'), code === 200 ? 'ok' : 'fail');
+      loadLogins();
+    };
+    actions.append(remove);
+  }
+  row.append(actions);
+  return row;
+}
+
+$('#loginAdd').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = { name: $('#la_name').value.trim(), username: $('#la_user').value.trim(), role: $('#la_role').value, person: $('#la_person').value, password: $('#la_pass').value };
+  loginSay('Adding…');
+  const { code, data } = await api('source=user_save', body);
+  if (code !== 200) { loginSay(data.message || 'Could not add the login.', 'fail'); return; }
+  loginSay(`Login added for ${body.name}. Send them: ${body.username} / ${body.password}`, 'ok');
+  for (const id of ['la_name', 'la_user', 'la_pass']) $('#' + id).value = '';
+  loadLogins();
+});
+
+for (const id of ['mp_cur', 'mp_new']) {
+  const input = $('#' + id), row = el('div', { className: 'field__row' });
+  input.replaceWith(row);
+  row.append(input, eyeFor(input, id === 'mp_cur' ? 'current password' : 'new password'));
+}
+
+$('#myPassword').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const m = $('#myPasswordMsg');
+  const { code, data } = await api('source=password', { current: $('#mp_cur').value, next: $('#mp_new').value });
+  m.className = 'save-msg ' + (code === 200 ? 'ok' : 'fail');
+  m.textContent = code === 200 ? 'Password changed.' : (data.message || 'Could not change it.');
+  if (code === 200) { $('#mp_cur').value = ''; $('#mp_new').value = ''; }
+});
+
+start();
+</script>
+</body>
+</html>

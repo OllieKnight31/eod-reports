@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EOD Report</title>
+<script src="/auth.js" data-allow="owner,manager,setter,dialler,closer"></script>
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --surface: #fafafa;
+    --surface2: #f5f5f5;
+    --border: #e5e5e5;
+    --text: #0a0a0a;
+    --text-dim: #525252;
+    --text-faint: #a3a3a3;
+    --accent: #EF4444;
+    --accent-hover: #DC2626;
+    --accent-soft: rgba(239,68,68,0.08);
+    --green: #10B981;
+    --red: #EF4444;
+  }
+  body {
+    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; padding: 20px;
+    background-image: radial-gradient(circle at 50% -10%, rgba(239,68,68,0.05), transparent 50%);
+  }
+  .container { max-width: 640px; margin: 0 auto; }
+
+  .header { text-align: center; padding: 28px 0 24px; }
+  .header__brand {
+    font-size: 11px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 3px;
+    margin-bottom: 10px; font-weight: 700;
+  }
+  .header__title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .header__sub { font-size: 13px; color: var(--text-dim); margin-top: 8px; }
+
+  /* ─── Role toggle ─── */
+  .role-toggle {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 4px; margin-bottom: 24px;
+  }
+  .role-btn {
+    padding: 12px 16px; background: transparent; border: none;
+    color: var(--text-dim); font-size: 14px; font-weight: 600;
+    cursor: pointer; border-radius: 8px; transition: all 0.15s;
+    font-family: inherit;
+  }
+  .role-btn:hover { color: var(--text); }
+  .role-btn.active {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.25);
+  }
+
+  /* ─── Form ─── */
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px;
+  }
+  .form-group { margin-bottom: 18px; }
+  label {
+    display: block; font-size: 11px; font-weight: 700;
+    margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+  label .req { color: var(--accent); }
+  input, select, textarea {
+    width: 100%; padding: 12px 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-size: 14px; font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  select { cursor: pointer; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  button[type=submit] {
+    width: 100%; padding: 15px; margin-top: 16px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.25);
+  }
+  button[type=submit]:hover { background: var(--accent-hover); }
+  button[type=submit]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status {
+    margin-top: 14px; padding: 12px 14px;
+    border-radius: 8px; font-size: 13px; text-align: center;
+    display: none; font-weight: 600;
+  }
+  .status.ok  { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); }
+  .status.err { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
+
+  .conditional { display: none; }
+  .conditional.show { display: block; }
+
+  .section-divider {
+    margin: 22px 0 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; font-weight: 700;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .footer {
+    text-align: center; margin-top: 24px; padding: 16px;
+    font-size: 11px; color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  .footer span { color: var(--accent); font-weight: 700; }
+
+  /* ─── Multi-call closer EOD ─── */
+  .call-block {
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; margin-bottom: 16px; background: var(--surface2);
+  }
+  .call-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .call-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); }
+  .remove-call {
+    background: transparent; border: none; color: var(--text-faint);
+    font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 8px;
+    border-radius: 6px; font-family: inherit;
+  }
+  .remove-call:hover { color: var(--red); background: rgba(239,68,68,0.08); }
+  .add-call-btn {
+    width: 100%; padding: 13px; margin-bottom: 14px;
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px dashed var(--accent); border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  .add-call-btn:hover { background: var(--accent); color: #fff; }
+  .hint-i{cursor:help;opacity:.55;font-size:.8em}
+  .kpi-hint{font-size:.72rem;margin-top:.25rem;color:var(--text-dim);transition:color .15s}
+  .kpi-hint.hit{color:#1E7A4F;font-weight:600}
+  .kpi-hint.miss{color:#E8611C;font-weight:600}
+  .section-divider .sub{text-transform:none;letter-spacing:0;font-weight:600;color:var(--text-dim)}
+  /* settings shortcut, top-right corner of every page (scrolls away with the page) */
+  .gear { position: absolute; top: 24px; right: 20px; z-index: 5; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border: 1px solid var(--border, var(--rule-2, #d4d4d4)); border-radius: 10px; background: var(--bg-card, var(--sheet, transparent));
+    color: var(--text-dim, var(--ink-2, #525252)); text-decoration: none; }
+  .gear:hover, .gear[aria-current] { color: var(--accent); border-color: var(--accent); }
+  .gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .gear svg { width: 19px; height: 19px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header__brand" id="brandName">EOD System</div>
+    <div class="header__title">EOD Report</div>
+    <div class="header__sub">Submit your end-of-day numbers or your call outcomes.</div>
+  </div>
+
+  <div class="role-toggle">
+    <button class="role-btn active" data-role="setter">Setter EOD</button>
+    <button class="role-btn" data-role="dialler">Dialler EOD</button>
+    <button class="role-btn" data-role="closer">Closer Call Report</button>
+  </div>
+
+  <div class="form-card">
+    <!-- ─── SETTER FORM ─── -->
+    <form id="setterForm" data-role="setter">
+      <div class="form-group">
+        <label>Setter Name <span class="req">*</span></label>
+        <input name="setter" placeholder="Type your name" required>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Date <span class="req">*</span></label>
+          <input type="date" name="date" required>
+        </div>
+        <div class="form-group">
+          <label>Lead Source <span class="req">*</span></label>
+          <select name="lead_source" class="leadSource" required></select>
+        </div>
+      </div>
+
+      <div class="form-group"><label>Lead Source Detail</label><input name="lead_source_detail" placeholder="Optional, e.g. which post, list or campaign"></div>
+
+      <div class="section-divider">Account</div>
+      <div class="grid-2">
+        <div class="form-group"><label>Profile Visits</label><input type="number" name="profile_visits" min="0" value="0"></div>
+        <div class="form-group"><label>Total Followers</label><input type="number" name="total_followers" min="0" value="0"></div>
+      </div>
+
+      <div class="section-divider">Activity</div>
+      <div class="grid-2">
+        <div class="form-group"><label>Messages Sent</label><input type="number" name="messages_sent" min="0" value="0"></div>
+        <div class="form-group"><label>Outbounds</label><input type="number" name="outbounds" min="0" value="0"></div>
+        <div class="form-group"><label>Inbounds</label><input type="number" name="inbounds" min="0" value="0"></div>
+        <div class="form-group"><label>Follow-ups</label><input type="number" name="followups" min="0" value="0"></div>
+        <div class="form-group"><label>Calls Proposed</label><input type="number" name="calls_proposed" min="0" value="0"></div>
+        <div class="form-group"><label>Calls Booked</label><input type="number" name="calls_booked" min="0" value="0"></div>
+        <div class="form-group"><label>New Followers</label><input type="number" name="new_followers" min="0" value="0"></div>
+        <div class="form-group"><label>Qualified (ICP)</label><input type="number" name="qualified_followers" min="0" value="0"></div>
+      </div>
+
+      <div class="section-divider">Links sent <span id="linksTotal" class="sub"></span></div>
+      <div class="grid-2">
+        <div class="form-group"><label>Booking Links <span class="hint-i" title="Calendar links sent to book a call">ⓘ</span></label><input type="number" name="booking_links" min="0" value="0" data-link></div>
+        <div class="form-group"><label>Community Invites <span class="hint-i" title="Invites to the client's community (Skool, Circle, Discord…)">ⓘ</span></label><input type="number" name="community_invites" min="0" value="0" data-link></div>
+        <div class="form-group"><label>Resource / VSL Links <span class="hint-i" title="Lead magnets, resource pages, or the VSL">ⓘ</span></label><input type="number" name="resource_links" min="0" value="0" data-link></div>
+      </div>
+
+      <div class="section-divider">Booked calls that didn't happen</div>
+      <div class="grid-2">
+        <div class="form-group"><label>No Shows</label><input type="number" name="no_shows" min="0" value="0"></div>
+        <div class="form-group"><label>Cancellations</label><input type="number" name="cancellations" min="0" value="0"></div>
+      </div>
+
+      <div class="section-divider">Notes</div>
+      <div class="form-group">
+        <label>Lead Quality <span class="hint-i" title="5 = inbox full of ICP buyers · 1 = junk">ⓘ</span></label>
+        <select name="lead_quality">
+          <option value="">Select</option>
+          <option value="5">5: inbox full of ICP buyers</option>
+          <option value="4">4: mostly good</option>
+          <option value="3">3: mixed</option>
+          <option value="2">2: mostly poor</option>
+          <option value="1">1: junk</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Hottest Lead</label><input name="hottest_lead" placeholder="Name or @handle"></div>
+      <div class="form-group">
+        <label>Hit KPIs?</label>
+        <select name="hit_kpis">
+          <option value="">Select</option><option>Yes</option><option>No</option><option>Partial</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea name="notes" placeholder="What went well? What didn't? Blockers?"></textarea>
+      </div>
+
+      <button type="submit">Submit Setter EOD</button>
+      <div class="status"></div>
+    </form>
+
+    <!-- ─── DIALLER FORM ─── -->
+    <!-- Only name + date are required. Anything left at 0 / blank is reported as
+         "nothing to measure" for that KPI, never as a miss. -->
+    <form id="diallerForm" data-role="dialler" style="display:none;">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Dialler Name <span class="req">*</span></label>
+          <input name="dialler" placeholder="Type your name" required>
+        </div>
+        <div class="form-group">
+          <label>Date <span class="req">*</span></label>
+          <input type="date" name="date" required>
+        </div>
+      </div>
+
+      <div class="section-divider">Activity today</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Dials</label>
+          <input type="number" name="dials" min="0" value="0">
+          <div class="kpi-hint" data-for="dials"></div>
+        </div>
+        <div class="form-group">
+          <label>Conversations <span class="hint-i" title="Connected and a meaningful two-way exchange (not a hangup or a gatekeeper)">ⓘ</span></label>
+          <input type="number" name="conversations" min="0" value="0">
+          <div class="kpi-hint" data-for="conversations"></div>
+        </div>
+        <div class="form-group">
+          <label>Speed to lead (mins) <span class="hint-i" title="Typical time from a new lead arriving to your first dial. Leave blank if no new leads came in today.">ⓘ</span></label>
+          <input type="number" name="speed_to_lead" min="0" step="any" placeholder="Blank = no new leads">
+          <div class="kpi-hint" data-for="speed"></div>
+        </div>
+        <div class="form-group">
+          <label>Leads triaged</label>
+          <input type="number" name="leads_triaged" min="0" value="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>All triaged leads have notes?</label>
+        <select name="all_triaged_with_notes">
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+        <div class="kpi-hint" data-for="notes"></div>
+      </div>
+
+      <div class="section-divider">Calls that were due today</div>
+      <div class="grid-2">
+        <div class="form-group"><label>Set calls due</label><input type="number" name="set_calls_due" min="0" value="0"></div>
+        <div class="form-group">
+          <label>Set calls showed</label>
+          <input type="number" name="set_calls_showed" min="0" value="0">
+          <div class="kpi-hint" data-for="set"></div>
+        </div>
+        <div class="form-group"><label>Triaged calls due</label><input type="number" name="triaged_calls_due" min="0" value="0"></div>
+        <div class="form-group">
+          <label>Triaged calls showed</label>
+          <input type="number" name="triaged_calls_showed" min="0" value="0">
+          <div class="kpi-hint" data-for="triaged"></div>
+        </div>
+      </div>
+
+      <div class="section-divider">Booked today (for future days)</div>
+      <div class="grid-2">
+        <div class="form-group"><label>Set calls booked</label><input type="number" name="set_calls_booked" min="0" value="0"></div>
+        <div class="form-group"><label>Triaged calls booked</label><input type="number" name="triaged_calls_booked" min="0" value="0"></div>
+      </div>
+      <!-- data-roster: becomes a dropdown of the closer roster when one is set -->
+      <div class="form-group"><label>Booked to which closer?</label><input name="booked_to_closer" data-roster="closer" placeholder="Optional"></div>
+
+      <div class="section-divider">Notes</div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea name="notes" placeholder="Blockers, lead quality, anything the team should know"></textarea>
+      </div>
+
+      <button type="submit">Submit Dialler EOD</button>
+      <div class="status"></div>
+    </form>
+
+    <!-- ─── CLOSER FORM (multi-call EOD) ─── -->
+    <form id="closerForm" data-role="closer" style="display:none;">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Closer Name <span class="req">*</span></label>
+          <input name="closer" placeholder="Type your name" required>
+        </div>
+        <div class="form-group">
+          <label>Date <span class="req">*</span></label>
+          <input type="date" name="date" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Did you take any calls today? <span class="req">*</span></label>
+        <select name="took_calls" id="tookCalls">
+          <option value="yes">Yes, I'll log each call</option>
+          <option value="no">No, zero calls today</option>
+        </select>
+      </div>
+
+      <div id="callsSection">
+        <div class="section-divider">Calls: add one block per call you took today</div>
+        <div id="callsContainer"></div>
+        <button type="button" id="addCallBtn" class="add-call-btn">+ Add another call</button>
+      </div>
+
+      <!-- Zero-call day: the call blocks (and their required fields) drop away entirely -->
+      <div id="noCallsSection" style="display:none;">
+        <div class="form-group"><label>Notes</label><textarea name="no_call_notes" placeholder="Optional, e.g. no calls booked, calendar cleared, follow-ups done"></textarea></div>
+      </div>
+
+      <button type="submit">Submit EOD Report</button>
+      <div class="status"></div>
+    </form>
+  </div>
+
+  <!-- One call block, cloned per call in the closer EOD -->
+  <template id="callTemplate">
+    <div class="call-block">
+      <div class="call-head">
+        <span class="call-title">Call <span class="call-num">1</span></span>
+        <button type="button" class="remove-call" title="Remove this call">✕</button>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Prospect Name <span class="req">*</span></label><input name="prospect_name" placeholder="Prospect name"></div>
+        <div class="form-group"><label>Prospect Email</label><input type="email" name="prospect_email" placeholder="for CRM sync"></div>
+      </div>
+      <div class="form-group"><label>Lead Source</label><select name="lead_source" class="leadSource" data-set="closer"></select></div>
+      <!-- one field per CLOSER_BOOKED_BY role; the unused ones are removed on load -->
+      <div class="grid-2 booked-by">
+        <div class="form-group" data-booked-by="setter"><label>Setter (who booked)</label><input name="setter" placeholder="Optional"></div>
+        <div class="form-group" data-booked-by="dialler"><label>Dialler (who booked)</label><input name="dialler" placeholder="Optional"></div>
+      </div>
+      <div class="form-group">
+        <label>Call Outcome <span class="req">*</span></label>
+        <select name="outcome" class="outcome">
+          <option value="">Select</option>
+          <option value="closed_won">Closed Won</option>
+          <option value="closed_lost">Closed Lost</option>
+          <option value="follow_up">Needs Follow-up</option>
+          <option value="no_show">No Show</option>
+          <option value="rescheduled">Rescheduled</option>
+        </select>
+      </div>
+      <div class="conditional cond-won">
+        <div class="grid-2">
+          <div class="form-group"><label>Package Sold</label><input name="package"></div>
+          <div class="form-group"><label>Ticket Price</label><input type="number" name="ticket" min="0" step="any"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label>Payment Type</label><select name="payment_type"><option value="">Select</option><option>Paid in Full</option><option>Deposit</option><option>Payment Plan</option></select></div>
+          <div class="form-group"><label>Payment Received</label><input name="payment_received" placeholder="Amount or 'Yes'"></div>
+        </div>
+      </div>
+      <div class="conditional cond-lost">
+        <div class="form-group"><label>Lost Reason</label><select name="lost_reason"><option value="">Select</option><option>Price</option><option>Timing</option><option>Spouse / Decision-maker</option><option>Need to think</option><option>Wrong fit</option><option>Other</option></select></div>
+        <div class="form-group"><label>Objections</label><textarea name="objections" placeholder="Top 1-3 objections raised"></textarea></div>
+      </div>
+      <div class="conditional cond-followup">
+        <div class="form-group"><label>Follow-up Date</label><input type="date" name="follow_up_date"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Recording URL</label><input name="recording_url" placeholder="https://..."></div>
+        <div class="form-group"><label>Notes</label><input name="notes" placeholder="Anything worth capturing"></div>
+      </div>
+    </div>
+  </template>
+
+  <div class="footer">Powered by <span id="footerBrand">EOD System</span></div>
+</div>
+
+<script>
+const API = '/api';
+const today = () => new Date().toISOString().slice(0, 10);
+let LEAD_SOURCES = ['Webinar'];
+// The closer form also offers booking origins that aren't setter sources (CLOSER_EXTRA_SOURCES),
+// published by the server as closer_lead_sources.
+let CLOSER_SOURCES = null;
+// Roles credited with booking a call on the closer form (CLOSER_BOOKED_BY).
+let BOOKED_BY = ['setter', 'dialler'];
+// Dialler KPI targets. Defaults only until /api?action=config answers with kpi_targets
+// the server's KPI_* settings are the single source of truth for the hit/miss hints.
+let DIALLER_TARGETS = { dials: 300, conversations: 20, speed: 5, setRate: 60, triagedRate: 80 };
+// Names per role, published by the server. Empty for a role = free-text box stays.
+let ROSTER = {};
+let CURRENCY = '$';
+
+function fillSources(scope) {
+  scope.querySelectorAll('select.leadSource').forEach(sel => {
+    const cur = sel.value;
+    // data-set="closer" gets the closer's list; every other select gets LEAD_SOURCES
+    const list = sel.dataset.set === 'closer' ? (CLOSER_SOURCES || LEAD_SOURCES) : LEAD_SOURCES;
+    sel.innerHTML = list.map(s => `<option>${s}</option>`).join('');
+    if (cur) sel.value = cur;
+  });
+}
+
+// ─── Role toggle ───
+let currentRole = 'setter';
+function setRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.dataset.role === role));
+  document.getElementById('setterForm').style.display  = role === 'setter'  ? 'block' : 'none';
+  document.getElementById('diallerForm').style.display = role === 'dialler' ? 'block' : 'none';
+  document.getElementById('closerForm').style.display  = role === 'closer'  ? 'block' : 'none';
+}
+document.querySelectorAll('.role-btn').forEach(btn => btn.addEventListener('click', () => setRole(btn.dataset.role)));
+// Auto-pick role from URL: /dialler-eod, /closer-outcome, ?role=…, or #… ; else setter
+const path = location.pathname.toLowerCase();
+const param = new URLSearchParams(location.search).get('role');
+const hash = location.hash.replace('#', '');
+if (path.includes('dialler') || param === 'dialler' || hash === 'dialler') setRole('dialler');
+else if (path.includes('closer') || param === 'closer' || hash === 'closer') setRole('closer');
+
+// ─── Multi-call closer EOD ───
+const callsContainer = document.getElementById('callsContainer');
+const callTemplate = document.getElementById('callTemplate');
+
+function renumber() {
+  const blocks = callsContainer.querySelectorAll('.call-block');
+  blocks.forEach((b, i) => {
+    b.querySelector('.call-num').textContent = i + 1;
+    b.querySelector('.remove-call').style.visibility = blocks.length > 1 ? 'visible' : 'hidden';
+  });
+}
+
+function addCall() {
+  const node = callTemplate.content.firstElementChild.cloneNode(true);
+  fillSources(node);
+  node.querySelectorAll('[data-booked-by]').forEach(el => { if (!BOOKED_BY.includes(el.dataset.bookedBy)) el.remove(); });
+  const bookedBy = node.querySelector('.booked-by');
+  if (bookedBy.children.length === 1) bookedBy.classList.remove('grid-2');
+  applyRoster(node);
+  const outcomeSel = node.querySelector('.outcome');
+  outcomeSel.addEventListener('change', () => {
+    const v = outcomeSel.value;
+    node.querySelector('.cond-won').classList.toggle('show', v === 'closed_won');
+    node.querySelector('.cond-lost').classList.toggle('show', v === 'closed_lost');
+    node.querySelector('.cond-followup').classList.toggle('show', v === 'follow_up' || v === 'rescheduled');
+  });
+  node.querySelector('.remove-call').addEventListener('click', () => { node.remove(); renumber(); });
+  callsContainer.appendChild(node);
+  renumber();
+  return node;
+}
+document.getElementById('tookCalls').addEventListener('change', (e) => {
+  const none = e.target.value === 'no';
+  document.getElementById('callsSection').style.display = none ? 'none' : 'block';
+  document.getElementById('noCallsSection').style.display = none ? 'block' : 'none';
+});
+document.getElementById('addCallBtn').addEventListener('click', () => {
+  const n = addCall();
+  n.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  n.querySelector('input[name=prospect_name]').focus();
+});
+
+function gatherCall(block) {
+  const o = {};
+  block.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.name) o[el.name] = typeof el.value === 'string' ? el.value.trim() : el.value;
+  });
+  return o;
+}
+
+// Running total of the link counts, shown in the section heading.
+function paintLinksTotal() {
+  const f = document.getElementById('setterForm');
+  const total = [...f.querySelectorAll('[data-link]')].reduce((a, el) => a + (Number(el.value) || 0), 0);
+  document.getElementById('linksTotal').textContent = total ? `${total} total` : '';
+}
+document.getElementById('setterForm').addEventListener('input', paintLinksTotal);
+document.getElementById('setterForm').addEventListener('reset', () => setTimeout(paintLinksTotal));
+
+// ─── Setter submit (single aggregate EOD) ───
+document.getElementById('setterForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const btn = form.querySelector('button[type=submit]');
+  const status = form.querySelector('.status');
+  status.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  const data = Object.fromEntries(new FormData(form));
+  try {
+    const r = await fetch(API + '?source=setter_eod', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const json = await r.json();
+    if (json.status !== 'received') throw new Error(json.message || 'submission failed');
+    status.className = 'status ok'; status.textContent = '✓ Setter EOD logged. Thanks!'; status.style.display = 'block';
+    form.reset();
+    form.querySelectorAll('input[name=date]').forEach(el => { el.value = today(); });
+  } catch (err) {
+    status.className = 'status err'; status.textContent = '✗ ' + err.message; status.style.display = 'block';
+  } finally { btn.disabled = false; btn.textContent = 'Submit Setter EOD'; }
+});
+
+// ─── Dialler EOD ───
+// Live hit/miss hints under each KPI. null = nothing to measure, shown neutral.
+function paintDiallerKPIs() {
+  const f = document.getElementById('diallerForm');
+  const raw = n => f.querySelector(`[name=${n}]`).value;
+  const v = n => Number(raw(n) || 0);
+  const T = DIALLER_TARGETS;
+  const setHint = (key, text, hit) => {
+    const el = f.querySelector(`.kpi-hint[data-for="${key}"]`);
+    el.textContent = text;
+    el.classList.toggle('hit', hit === true);
+    el.classList.toggle('miss', hit === false);
+  };
+  setHint('dials', `${v('dials')} / ${T.dials}`, v('dials') >= T.dials);
+  setHint('conversations', `${v('conversations')} / ${T.conversations}`, v('conversations') >= T.conversations);
+  const speed = raw('speed_to_lead') === '' ? null : v('speed_to_lead');
+  setHint('speed', speed == null ? `target ≤${T.speed} min` : `${speed} min (target ≤${T.speed})`, speed == null ? null : speed <= T.speed);
+  const triaged = v('leads_triaged'), notesOk = raw('all_triaged_with_notes') === 'Yes';
+  setHint('notes', triaged === 0 ? 'no leads triaged (not counted)' : notesOk ? 'all triaged with notes' : 'incomplete (this is a KPI)',
+          triaged === 0 ? null : notesOk);
+  const rate = (showed, due) => (due > 0 ? Math.round((showed / due) * 100) : null);
+  const sr = rate(v('set_calls_showed'), v('set_calls_due'));
+  const tr = rate(v('triaged_calls_showed'), v('triaged_calls_due'));
+  setHint('set', sr == null ? `target ${T.setRate}% show · none due` : `${sr}% (target ${T.setRate}%)`, sr == null ? null : sr >= T.setRate);
+  setHint('triaged', tr == null ? `target ${T.triagedRate}% show · none due` : `${tr}% (target ${T.triagedRate}%)`, tr == null ? null : tr >= T.triagedRate);
+}
+document.getElementById('diallerForm').addEventListener('input', paintDiallerKPIs);
+document.getElementById('diallerForm').addEventListener('change', paintDiallerKPIs);
+document.getElementById('diallerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const btn = form.querySelector('button[type=submit]');
+  const status = form.querySelector('.status');
+  status.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  const data = Object.fromEntries(new FormData(form));
+  try {
+    const r = await fetch(API + '?source=dialler_eod', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const json = await r.json();
+    if (json.status !== 'received') throw new Error(json.message || 'submission failed');
+    const missed = (json.kpis && json.kpis.missed) || [];
+    status.className = 'status ok';
+    status.textContent = missed.length ? `✓ Logged. KPIs missed: ${missed.join(', ')}` : '✓ Logged. No KPIs missed today.';
+    status.style.display = 'block';
+    form.reset();
+    form.querySelectorAll('input[name=date]').forEach(el => { el.value = today(); });
+    paintDiallerKPIs();
+  } catch (err) {
+    status.className = 'status err'; status.textContent = '✗ ' + err.message; status.style.display = 'block';
+  } finally { btn.disabled = false; btn.textContent = 'Submit Dialler EOD'; }
+});
+
+// ─── Closer submit (multiple calls in one EOD report) ───
+document.getElementById('closerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const btn = form.querySelector('button[type=submit]');
+  const status = form.querySelector('.status');
+  const show = (cls, msg) => { status.className = 'status ' + cls; status.textContent = msg; status.style.display = 'block'; };
+  status.style.display = 'none';
+
+  // [name=closer], not input[name=closer]: if the name box is ever swapped for a <select>
+  // (a roster dropdown), an input selector returns null and the submit dies silently.
+  const closer = (form.querySelector('[name=closer]')?.value || '').trim();
+  const date = form.querySelector('input[name=date]').value || today();
+  if (!closer) return show('err', '✗ Enter the closer name.');
+
+  // Zero-call day: still an EOD, just no call blocks, so none of their fields are required.
+  if (document.getElementById('tookCalls').value === 'no') {
+    const notesEl = form.querySelector('[name=no_call_notes]');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    try {
+      const r = await fetch(API + '?source=closer_eod', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ closer, date, no_calls: true, notes: notesEl.value.trim(), calls: [] }) });
+      const json = await r.json();
+      if (json.status !== 'received') throw new Error(json.message || 'submission failed');
+      show('ok', '✓ EOD report logged: 0 calls today.');
+      notesEl.value = '';
+    } catch (err) {
+      show('err', '✗ ' + err.message);
+    } finally { btn.disabled = false; btn.textContent = 'Submit EOD Report'; }
+    return;
+  }
+
+  const blocks = [...callsContainer.querySelectorAll('.call-block')];
+  const calls = blocks.map(gatherCall).filter(c => c.prospect_name || c.prospect_email);
+  if (!calls.length) return show('err', '✗ Add at least one call with a prospect, or pick "No, zero calls today".');
+  if (calls.some(c => !c.outcome)) return show('err', '✗ Every call needs an outcome selected.');
+
+  btn.disabled = true; btn.textContent = `Submitting ${calls.length} call${calls.length === 1 ? '' : 's'}…`;
+  try {
+    const r = await fetch(API + '?source=closer_eod', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ closer, date, calls }) });
+    const json = await r.json();
+    if (json.status !== 'received') throw new Error(json.message || 'submission failed');
+    const t = json.totals || {};
+    show('ok', `✓ EOD report logged: ${json.calls_count} call${json.calls_count === 1 ? '' : 's'} · ${t.won || 0} won · ${CURRENCY}${(t.revenue || 0).toLocaleString('en-US')}`);
+    callsContainer.innerHTML = '';
+    addCall();
+  } catch (err) {
+    show('err', '✗ ' + err.message);
+  } finally { btn.disabled = false; btn.textContent = 'Submit EOD Report'; }
+});
+
+// ─── Reports in use ───
+// The business only sees the reports for roles it actually has (REPORT_ROLES). A role
+// that is off loses its tab; a direct link to it lands on the first role that is on.
+function applyRoles(roles) {
+  document.querySelectorAll('.role-btn').forEach(b => { if (!roles.includes(b.dataset.role)) b.remove(); });
+  if (roles.length < 2) document.querySelector('.role-toggle').style.display = 'none';
+  if (!roles.includes(currentRole)) setRole(roles[0]);
+}
+
+// ─── Name dropdowns ───
+// Typed names drift ("Jo", "Jo Lee", "Joanna") and each spelling becomes its own person
+// on the dashboard. Where the server publishes a roster for a role, the free-text name box
+// becomes a fixed list. No roster for that role = the text box stays.
+// Matches input[name=<role>] and input[data-roster=<role>].
+function applyRoster(scope) {
+  ['setter', 'dialler', 'closer'].forEach(role => {
+    const names = ROSTER[role] || [];
+    if (!names.length) return;
+    scope.querySelectorAll(`input[name=${role}], input[data-roster=${role}]`).forEach(inp => {
+      const sel = document.createElement('select');
+      sel.name = inp.name; sel.required = inp.required;
+      const blank = document.createElement('option');
+      blank.value = ''; blank.textContent = inp.required ? 'Select your name' : 'None';
+      sel.appendChild(blank);
+      names.forEach(n => {
+        const o = document.createElement('option'); o.textContent = n;
+        // one person on the roster: pre-pick them, and survive form.reset()
+        if (names.length === 1 && inp.required) o.defaultSelected = true;
+        sel.appendChild(o);
+      });
+      inp.replaceWith(sel);
+    });
+  });
+}
+
+// ─── Bootstrap config + brand, then seed the first call block ───
+async function bootstrap() {
+  try {
+    const r = await fetch(API + '?action=config', { cache: 'no-store' });
+    const cfg = await r.json();
+    if (cfg && cfg.brand) {
+      const brandName = cfg.brand.name || 'EOD System';
+      document.getElementById('brandName').textContent = brandName;
+      const fb = document.getElementById('footerBrand');
+      if (fb) fb.textContent = brandName;
+      if (cfg.brand.color) {
+        // hover too, left alone it stays the template's red
+        document.documentElement.style.setProperty('--accent', cfg.brand.color);
+        document.documentElement.style.setProperty('--accent-hover', cfg.brand.color);
+      }
+      document.title = `EOD Report | ${cfg.brand.name || 'EOD'}`;
+    }
+    if (cfg && cfg.lead_sources && cfg.lead_sources.length) LEAD_SOURCES = cfg.lead_sources;
+    if (cfg && cfg.closer_lead_sources && cfg.closer_lead_sources.length) CLOSER_SOURCES = cfg.closer_lead_sources;
+    if (cfg && cfg.closer_booked_by && cfg.closer_booked_by.length) BOOKED_BY = cfg.closer_booked_by;
+    if (cfg && cfg.currency_symbol) CURRENCY = cfg.currency_symbol;
+    if (cfg && cfg.roster) ROSTER = cfg.roster;
+    if (cfg && cfg.report_roles && cfg.report_roles.length) applyRoles(cfg.report_roles);
+    if (cfg && cfg.kpi_targets) {
+      const t = cfg.kpi_targets;
+      DIALLER_TARGETS = {
+        dials:         Number(t.dials)             || DIALLER_TARGETS.dials,
+        conversations: Number(t.conversations)     || DIALLER_TARGETS.conversations,
+        speed:         Number(t.speed_to_lead_min) || DIALLER_TARGETS.speed,
+        setRate:       Number(t.set_show_rate)     || DIALLER_TARGETS.setRate,
+        triagedRate:   Number(t.triaged_show_rate) || DIALLER_TARGETS.triagedRate,
+      };
+    }
+  } catch (e) { /* keep defaults */ }
+  paintDiallerKPIs();
+  applyRoster(document);
+  // A setter, dialler or closer only gets their own report, already in their name.
+  // (The server enforces both; this just keeps the page honest about it.)
+  const me = await window.EOD_AUTH;
+  if (me && ['setter', 'dialler', 'closer'].includes(me.role)) {
+    applyRoles([me.role]);
+    const own = document.querySelector(`#${me.role}Form [name=${me.role}]`);
+    const fixed = Object.assign(document.createElement('input'), { name: me.role, value: me.person || me.name, readOnly: true, required: true });
+    fixed.defaultValue = fixed.value;          // survive form.reset() after a submit
+    fixed.title = 'Reports are filed under your own name';
+    own.replaceWith(fixed);
+  }
+  fillSources(document);
+  document.querySelectorAll('input[name=date]').forEach(el => { el.value = today(); });
+  if (!callsContainer.querySelector('.call-block')) addCall();
+}
+bootstrap();
+</script>
+</body>
+</html>

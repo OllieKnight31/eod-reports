@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EOD Report</title>
+<script src="/auth.js" data-allow="owner,manager"></script>
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg-card: #fafafa;
+    --bg-elevated: #f5f5f5;
+    --border: #e5e5e5;
+    --text: #0a0a0a;
+    --text-dim: #525252;
+    --green: #10B981;
+    --red: #EF4444;
+    --yellow: #F59E0B;
+    --blue: #3B82F6;
+    --purple: #8B5CF6;
+    --orange: #F97316;
+    --accent: #EF4444;
+  }
+  body { font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 12px; flex-wrap: wrap; gap: 16px; }
+  .header__title { font-size: 22px; font-weight: 700; }
+  .header__brand { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+  .header__sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .live-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.25); color: var(--green); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .live-pill .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .nav a { padding: 10px 18px; color: var(--text-dim); text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav a:hover { color: var(--text); }
+  .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+  .controls .preset { padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; cursor: pointer; }
+  .controls .preset.active { border-color: var(--accent); color: var(--accent); }
+  .controls input[type=date], .controls select { padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; }
+  .controls .source-select, .controls .closer-select, .controls .setter-select { min-width: 150px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .kpi__label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .kpi__val { font-size: 28px; font-weight: 700; }
+  .kpi__sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin: 24px 0 12px; }
+
+  .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .source-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; border-left: 4px solid var(--blue); }
+  .source-card__name { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .source-card__row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+  .source-card__row .label { color: var(--text-dim); }
+  .source-card__row .value { font-weight: 600; }
+  .source-card__bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; margin-top: 12px; overflow: hidden; }
+  .source-card__bar > div { height: 100%; background: var(--accent); transition: width 0.4s; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 24px; overflow-x: auto; }
+
+  .source-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(149,165,166,0.15); color: var(--text-dim); }
+  .stage-chip  { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(149,165,166,0.15); color: var(--text-dim); }
+  .stage-chip[data-k="callBooked"]    { background: rgba(52,152,219,0.15); color: var(--blue); }
+  .stage-chip[data-k="callCompleted"] { background: rgba(46,204,113,0.10); color: var(--green); }
+  .stage-chip[data-k="proposalSent"]  { background: rgba(155,89,182,0.15); color: var(--purple); }
+  .stage-chip[data-k="closedWon"]     { background: rgba(46,204,113,0.20); color: var(--green); }
+  .stage-chip[data-k="closedLost"]    { background: rgba(231,76,60,0.15);  color: var(--red); }
+  .stage-chip[data-k="noShow"]        { background: rgba(230,126,34,0.15); color: var(--orange); }
+
+  .outcome-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .outcome-chip.won { background: rgba(46,204,113,0.15); color: var(--green); }
+  .outcome-chip.lost { background: rgba(231,76,60,0.15); color: var(--red); }
+  .outcome-chip.ns { background: rgba(230,126,34,0.15); color: var(--orange); }
+  .outcome-chip.fu { background: rgba(241,196,15,0.15); color: var(--yellow); }
+  .outcome-chip.other { background: rgba(149,165,166,0.15); color: var(--text-dim); }
+
+  .pipeline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .pipe-col { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; min-height: 120px; }
+  .pipe-col__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .pipe-col__count { font-size: 16px; font-weight: 700; }
+  .pipe-col__value { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; }
+  .pipe-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 12px; }
+  .pipe-card__name { font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pipe-card__meta { color: var(--text-dim); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pipe-card__actions { margin-top: 6px; display: flex; gap: 4px; }
+  .pipe-card__more { text-align: center; color: var(--text-dim); font-size: 11px; padding: 4px; }
+
+  .act { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--text-dim); background: transparent; }
+  .act:hover { color: var(--text); border-color: var(--text-dim); }
+  .act.email { color: var(--blue); border-color: rgba(52,152,219,0.3); }
+  .act.wa    { color: var(--green); border-color: rgba(46,204,113,0.3); }
+  .act.tel   { color: var(--yellow); border-color: rgba(241,196,15,0.3); }
+  .act.crm   { color: var(--purple); border-color: rgba(155,89,182,0.3); }
+  .act.disabled { opacity: 0.35; pointer-events: none; }
+
+  .empty { text-align: center; padding: 24px; color: var(--text-dim); font-size: 13px; }
+  @media (max-width: 700px) { .kpi__val { font-size: 22px; } .header__title { font-size: 18px; } }
+  /* settings shortcut, top-right corner of every page (scrolls away with the page) */
+  .gear { position: absolute; top: 24px; right: 20px; z-index: 5; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border: 1px solid var(--border, var(--rule-2, #d4d4d4)); border-radius: 10px; background: var(--bg-card, var(--sheet, transparent));
+    color: var(--text-dim, var(--ink-2, #525252)); text-decoration: none; }
+  .gear:hover, .gear[aria-current] { color: var(--accent); border-color: var(--accent); }
+  .gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .gear svg { width: 19px; height: 19px; }
+  .header { padding-right: 52px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="header__brand" id="brandName">EOD System</div>
+      <div class="header__title">EOD Report: All Sources</div>
+      <div class="header__sub" id="brandSub">Calls, deals & revenue across every traffic source.</div>
+    </div>
+    <div class="live-pill"><span class="dot"></span><span id="liveLabel">Live · refreshing</span></div>
+  </div>
+
+
+  <div class="controls">
+    <button class="preset" data-range="today">Today</button>
+    <button class="preset" data-range="yesterday">Yesterday</button>
+    <button class="preset active" data-range="7d">Last 7d</button>
+    <button class="preset" data-range="30d">Last 30d</button>
+    <input type="date" id="startDate">
+    <span style="color:var(--text-dim);">→</span>
+    <input type="date" id="endDate">
+    <select id="sourceFilter" class="source-select"><option value="">All sources</option></select>
+    <select id="closerFilter" class="closer-select"><option value="">All closers</option></select>
+    <select id="setterFilter" class="setter-select"><option value="">All setters</option></select>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi__label">Calls Booked</div><div class="kpi__val" id="kpiBooked">...</div><div class="kpi__sub" id="kpiBookedSub"></div></div>
+    <div class="kpi"><div class="kpi__label">Calls Showed</div><div class="kpi__val" id="kpiShowed">...</div><div class="kpi__sub" id="kpiShowedSub"></div></div>
+    <div class="kpi"><div class="kpi__label">Show Rate</div><div class="kpi__val" id="kpiShowRate">...</div></div>
+    <div class="kpi"><div class="kpi__label">Deals Closed</div><div class="kpi__val" id="kpiClosed">...</div><div class="kpi__sub" id="kpiClosedSub"></div></div>
+    <div class="kpi"><div class="kpi__label">Revenue</div><div class="kpi__val" id="kpiRevenue">...</div><div class="kpi__sub" id="kpiRevenueSub"></div></div>
+  </div>
+
+  <div id="pipelineSection" style="display:none">
+    <div class="section-title">Closer Pipeline <span id="pipeMeta" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim);font-size:12px;margin-left:8px;"></span></div>
+    <div class="pipeline-grid" id="pipelineGrid"></div>
+  </div>
+
+  <div class="section-title">By Source</div>
+  <div class="source-grid" id="sourceGrid"></div>
+
+  <div class="section-title">By Setter</div>
+  <div class="panel"><table><thead><tr>
+    <th>Setter</th>
+    <th class="num">Calls Booked</th>
+    <th class="num">Showed</th>
+    <th class="num">Closed</th>
+    <th class="num">Revenue</th>
+    <th class="num">Show %</th>
+  </tr></thead><tbody id="setterTbody"></tbody></table></div>
+
+  <div class="section-title">By Closer</div>
+  <div class="panel"><table><thead><tr>
+    <th>Closer</th>
+    <th class="num">Showed</th>
+    <th class="num">Closed</th>
+    <th class="num">Lost</th>
+    <th class="num">Revenue</th>
+    <th class="num">Close %</th>
+  </tr></thead><tbody id="closerTbody"></tbody></table></div>
+
+  <div class="section-title">Contacts <span id="contactsMeta" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim);font-size:12px;margin-left:8px;"></span></div>
+  <div class="panel"><table><thead><tr>
+    <th>Name</th>
+    <th>Source</th>
+    <th>Stage</th>
+    <th>Outcome</th>
+    <th>Closer</th>
+    <th>Setter</th>
+    <th class="num">Ticket</th>
+    <th>Last Activity</th>
+    <th>Actions</th>
+  </tr></thead><tbody id="contactsTbody"></tbody></table></div>
+</div>
+
+<script>
+const API = '/api';
+let CONFIG = null;
+
+function fmtDate(d) { return d.toISOString().slice(0, 10); }
+function todayStr() { return fmtDate(new Date()); }
+function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return fmtDate(d); }
+
+function setRange(preset) {
+  document.querySelectorAll('.controls .preset').forEach(b => b.classList.toggle('active', b.dataset.range === preset));
+  let s, e = todayStr();
+  if (preset === 'today') s = e;
+  else if (preset === 'yesterday') { s = daysAgo(1); e = s; }
+  else if (preset === '7d') s = daysAgo(7);
+  else if (preset === '30d') s = daysAgo(30);
+  else s = daysAgo(7);
+  document.getElementById('startDate').value = s;
+  document.getElementById('endDate').value = e;
+  refresh();
+}
+
+document.querySelectorAll('.controls .preset').forEach(btn => btn.addEventListener('click', () => setRange(btn.dataset.range)));
+['startDate','endDate','sourceFilter','closerFilter','setterFilter'].forEach(id => document.getElementById(id).addEventListener('change', refresh));
+
+function fmtNum(n) { return Number(n || 0).toLocaleString('en-GB'); }
+function fmtMoney(n) { const sym = (CONFIG && CONFIG.currency_symbol) || '£'; return sym + Number(n || 0).toLocaleString('en-GB', { maximumFractionDigits: 0 }); }
+function fmtPct(n) { return (Number(n || 0) * 100).toFixed(1) + '%'; }
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+function outcomeClass(o) {
+  const x = (o || '').toLowerCase().replace(/[\s\-_]+/g, '');
+  if (x === 'closedwon' || x === 'won' || x === 'closed') return 'won';
+  if (x === 'closedlost' || x === 'lost') return 'lost';
+  if (x === 'noshow') return 'ns';
+  if (x === 'needsfollowup' || x === 'followup' || x === 'rescheduled') return 'fu';
+  return 'other';
+}
+
+function waLink(phone) {
+  if (!phone) return null;
+  const digits = String(phone).replace(/[^\d]/g, '');
+  return digits ? 'https://wa.me/' + digits : null;
+}
+
+function actionsCell(c) {
+  const parts = [];
+  if (c.email) parts.push(`<a class="act email" href="mailto:${esc(c.email)}" title="${esc(c.email)}">Email</a>`);
+  else parts.push(`<span class="act email disabled">Email</span>`);
+  const wa = waLink(c.phone);
+  if (wa) parts.push(`<a class="act wa" href="${esc(wa)}" target="_blank" rel="noopener" title="WhatsApp ${esc(c.phone)}">WA</a>`);
+  else parts.push(`<span class="act wa disabled">WA</span>`);
+  if (c.phone) parts.push(`<a class="act tel" href="tel:${esc(c.phone.replace(/\s+/g,''))}" title="${esc(c.phone)}">Call</a>`);
+  else parts.push(`<span class="act tel disabled">Call</span>`);
+  if (c.crm_url) parts.push(`<a class="act crm" href="${esc(c.crm_url)}" target="_blank" rel="noopener" title="Open in CRM">CRM</a>`);
+  return parts.join(' ');
+}
+
+function applySources() {
+  const sources = (CONFIG && (CONFIG.closer_lead_sources || CONFIG.lead_sources)) || [];
+  const sel = document.getElementById('sourceFilter');
+  sel.innerHTML = '<option value="">All sources</option>' + sources.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+}
+
+function renderSourceGrid(by_source) {
+  const wrap = document.getElementById('sourceGrid');
+  wrap.innerHTML = '';
+  const sources = (CONFIG && (CONFIG.closer_lead_sources || CONFIG.lead_sources)) || Object.keys(by_source || {});
+  const maxRev = Math.max(1, ...sources.map(s => (by_source[s] && by_source[s].revenue) || 0));
+  for (const src of sources) {
+    const b = by_source[src] || { booked: 0, showed: 0, closed: 0, revenue: 0, close_rate: 0, show_rate: 0 };
+    const widthPct = Math.round(((b.revenue || 0) / maxRev) * 100);
+    const card = document.createElement('div');
+    card.className = 'source-card';
+    card.dataset.src = src;
+    card.innerHTML = `
+      <div class="source-card__name">${esc(src)}</div>
+      <div class="source-card__row"><span class="label">Booked</span><span class="value">${fmtNum(b.booked)}</span></div>
+      <div class="source-card__row"><span class="label">Showed</span><span class="value">${fmtNum(b.showed)}</span></div>
+      <div class="source-card__row"><span class="label">Closed</span><span class="value">${fmtNum(b.closed)}</span></div>
+      <div class="source-card__row"><span class="label">Revenue</span><span class="value">${fmtMoney(b.revenue)}</span></div>
+      <div class="source-card__row"><span class="label">Close rate</span><span class="value">${fmtPct(b.close_rate)}</span></div>
+      <div class="source-card__bar"><div style="width:${widthPct}%"></div></div>
+    `;
+    wrap.appendChild(card);
+  }
+}
+
+function renderTable(tbodyId, rowsObj, cols, sortKey) {
+  const tb = document.getElementById(tbodyId);
+  tb.innerHTML = '';
+  const entries = Object.entries(rowsObj || {});
+  if (!entries.length) { tb.innerHTML = `<tr><td colspan="${cols.length}" class="empty">No activity in this range.</td></tr>`; return; }
+  entries.sort((a, b) => (b[1][sortKey] || 0) - (a[1][sortKey] || 0));
+  for (const [name, v] of entries) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(name)}</td>` + cols.slice(1).map(c => {
+      const val = v[c.key] || 0;
+      const formatted = c.fmt === 'money' ? fmtMoney(val) : c.fmt === 'pct' ? fmtPct(val) : fmtNum(val);
+      return `<td class="num">${formatted}</td>`;
+    }).join('');
+    tb.appendChild(tr);
+  }
+}
+
+function renderPipeline(pipeline) {
+  const section = document.getElementById('pipelineSection');
+  const grid = document.getElementById('pipelineGrid');
+  const meta = document.getElementById('pipeMeta');
+  if (!pipeline || !pipeline.available) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  meta.textContent = `· ${(pipeline.provider||'').toUpperCase()} · ${fmtNum(pipeline.total_count)} opps · ${fmtMoney(pipeline.total_value)} total value (live)`;
+  grid.innerHTML = '';
+  for (const stage of pipeline.stages || []) {
+    const col = document.createElement('div');
+    col.className = 'pipe-col';
+    const cards = (stage.contacts || []).map(c => `
+      <div class="pipe-card">
+        <div class="pipe-card__name">${esc(c.name || c.email || 'n/a')}</div>
+        <div class="pipe-card__meta">${c.value ? fmtMoney(c.value) + ' · ' : ''}${esc((c.updated_at || '').slice(0,10))}</div>
+        <div class="pipe-card__actions">${actionsCell(c)}</div>
+      </div>
+    `).join('');
+    const more = stage.count > (stage.contacts || []).length ? `<div class="pipe-card__more">+${stage.count - stage.contacts.length} more</div>` : '';
+    col.innerHTML = `
+      <div class="pipe-col__head">
+        <span class="stage-chip" data-k="${esc(stage.key)}">${esc(stage.label)}</span>
+        <span class="pipe-col__count">${fmtNum(stage.count)}</span>
+      </div>
+      <div class="pipe-col__value">${stage.value ? fmtMoney(stage.value) : 'n/a'}</div>
+      ${cards || '<div class="empty" style="padding:8px;">Empty</div>'}
+      ${more}
+    `;
+    grid.appendChild(col);
+  }
+}
+
+function renderContacts(contacts) {
+  const tb = document.getElementById('contactsTbody');
+  const meta = document.getElementById('contactsMeta');
+  meta.textContent = `· ${fmtNum((contacts || []).length)} contact${contacts.length === 1 ? '' : 's'}`;
+  tb.innerHTML = '';
+  if (!contacts || !contacts.length) { tb.innerHTML = `<tr><td colspan="9" class="empty">No contacts in this range yet.</td></tr>`; return; }
+  for (const c of contacts.slice(0, 200)) {
+    const tr = document.createElement('tr');
+    const oc = outcomeClass(c.outcome);
+    const stagePill = c.stage_key ? `<span class="stage-chip" data-k="${esc(c.stage_key)}">${esc(c.stage_label)}</span>` : '<span style="color:var(--text-dim)">n/a</span>';
+    const sourcePill = c.source ? `<span class="source-chip">${esc(c.source)}</span>` : '<span style="color:var(--text-dim)">n/a</span>';
+    const outcomePill = c.outcome ? `<span class="outcome-chip ${oc}">${esc(c.outcome)}</span>` : '<span style="color:var(--text-dim)">n/a</span>';
+    const last = (c.last_activity || '').slice(0, 16).replace('T', ' ');
+    tr.innerHTML = `
+      <td><div style="font-weight:600;">${esc(c.name || 'n/a')}</div><div style="color:var(--text-dim);font-size:11px;">${esc(c.email || '')}</div></td>
+      <td>${sourcePill}</td>
+      <td>${stagePill}</td>
+      <td>${outcomePill}</td>
+      <td>${esc(c.closer || 'n/a')}</td>
+      <td>${esc(c.setter || 'n/a')}</td>
+      <td class="num">${c.ticket ? fmtMoney(c.ticket) : 'n/a'}</td>
+      <td>${esc(last)}</td>
+      <td>${actionsCell(c)}</td>
+    `;
+    tb.appendChild(tr);
+  }
+}
+
+function syncDropdowns(closers, setters) {
+  function repop(id, values, placeholder) {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    const seen = new Set(values);
+    if (current && !seen.has(current)) values = [...values, current];
+    sel.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${esc(v)}"${v === current ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  }
+  repop('closerFilter', closers || [], 'All closers');
+  repop('setterFilter', setters || [], 'All setters');
+}
+
+async function refresh() {
+  const s = document.getElementById('startDate').value;
+  const e = document.getElementById('endDate').value;
+  const params = new URLSearchParams({ action: 'dashboard_data' });
+  if (s) params.set('start', s);
+  if (e) params.set('end', e);
+  const src = document.getElementById('sourceFilter').value; if (src) params.set('source', src);
+  const closer = document.getElementById('closerFilter').value; if (closer) params.set('closer', closer);
+  const setter = document.getElementById('setterFilter').value; if (setter) params.set('setter', setter);
+  const live = document.getElementById('liveLabel');
+  live.textContent = 'Live · loading…';
+  try {
+    const r = await fetch(API + '?' + params.toString(), { cache: 'no-store' });
+    const data = await r.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'unknown error');
+
+    const t = data.totals || {};
+    document.getElementById('kpiBooked').textContent = fmtNum(t.booked);
+    document.getElementById('kpiBookedSub').textContent = `${data.date_range.start} → ${data.date_range.end}`;
+    document.getElementById('kpiShowed').textContent = fmtNum(t.showed);
+    document.getElementById('kpiShowedSub').textContent = `${fmtNum(t.no_shows)} no-show`;
+    document.getElementById('kpiShowRate').textContent = fmtPct(t.show_rate);
+    document.getElementById('kpiClosed').textContent = fmtNum(t.closed);
+    document.getElementById('kpiClosedSub').textContent = `${fmtNum(t.lost)} lost · ${fmtNum(t.follow_ups)} follow-up`;
+    document.getElementById('kpiRevenue').textContent = fmtMoney(t.revenue);
+    document.getElementById('kpiRevenueSub').textContent = fmtPct(t.close_rate) + ' close rate';
+
+    syncDropdowns(data.closers, data.setters);
+    renderPipeline(data.pipeline);
+    renderSourceGrid(data.by_source || {});
+    renderTable('setterTbody', data.by_setter || {}, [
+      { key: 'name' }, { key: 'booked', fmt: 'num' }, { key: 'showed', fmt: 'num' }, { key: 'closed', fmt: 'num' }, { key: 'revenue', fmt: 'money' }, { key: 'show_rate', fmt: 'pct' },
+    ], 'revenue');
+    renderTable('closerTbody', data.by_closer || {}, [
+      { key: 'name' }, { key: 'showed', fmt: 'num' }, { key: 'closed', fmt: 'num' }, { key: 'lost', fmt: 'num' }, { key: 'revenue', fmt: 'money' }, { key: 'close_rate', fmt: 'pct' },
+    ], 'revenue');
+    renderContacts(data.contacts || []);
+
+    live.textContent = 'Live · updated ' + new Date().toLocaleTimeString();
+  } catch (err) {
+    live.textContent = 'Live · error: ' + err.message;
+  }
+}
+
+async function bootstrap() {
+  try {
+    const r = await fetch(API + '?action=config', { cache: 'no-store' });
+    CONFIG = await r.json();
+    if (CONFIG && CONFIG.brand) {
+      document.getElementById('brandName').textContent = CONFIG.brand.name || 'EOD System';
+      if (CONFIG.brand.color) document.documentElement.style.setProperty('--accent', CONFIG.brand.color);
+      document.title = `EOD Report | ${CONFIG.brand.name || 'EOD System'}`;
+    }
+    applySources();
+  } catch (e) { /* keep defaults */ }
+  setRange('7d');
+  setInterval(refresh, 60000);
+}
+bootstrap();
+</script>
+</body>
+</html>

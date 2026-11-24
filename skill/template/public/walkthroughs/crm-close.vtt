@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:06.501
+This walkthrough connects Close, so your live pipeline shows on the dashboard. It takes about two minutes.
+
+00:00:06.701 --> 00:00:12.705
+Open Close. Go to Settings, then Developer, then API Keys, and press New API Key.
+
+00:00:12.905 --> 00:00:19.975
+Give it a name and copy the key. It starts with api_. Close only shows it once, so copy it now.
+
+00:00:20.175 --> 00:00:28.162
+On the settings page, under CRM, choose Close. Paste the key, press Save CRM, then Connect and load pipelines.
+
+00:00:28.362 --> 00:00:33.832
+Choose your pipeline, match each dashboard column to one of its statuses, and save.
+
+00:00:34.032 --> 00:00:40.825
+That is Close connected. Your pipeline is live on the dashboard, and each card links straight to the lead in Close.

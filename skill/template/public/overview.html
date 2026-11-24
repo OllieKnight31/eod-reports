@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overview</title>
+<script src="/auth.js" data-allow="owner,manager"></script>
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg-card: #fafafa; --bg-elevated: #f5f5f5; --border: #e5e5e5;
+    --text: #0a0a0a; --text-dim: #525252;
+    --green: #10B981; --red: #EF4444; --yellow: #F59E0B; --blue: #3B82F6; --purple: #8B5CF6; --orange: #F97316;
+    --accent: #EF4444;
+  }
+  body { font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 12px; flex-wrap: wrap; gap: 16px; }
+  .header__title { font-size: 22px; font-weight: 700; }
+  .header__brand { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+  .header__sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .live-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.25); color: var(--green); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .live-pill .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .nav { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .nav a { padding: 10px 18px; color: var(--text-dim); text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav a:hover { color: var(--text); }
+  .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+  .controls .preset { padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; cursor: pointer; }
+  .controls .preset.active { border-color: var(--accent); color: var(--accent); }
+  .controls input[type=date], .controls select { padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; }
+  .controls .source-select, .controls .closer-select, .controls .setter-select { min-width: 150px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .kpi__label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .kpi__val { font-size: 28px; font-weight: 700; }
+  .kpi__delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-top: 8px; }
+  .kpi__delta.up { background: rgba(46,204,113,0.12); color: var(--green); }
+  .kpi__delta.down { background: rgba(231,76,60,0.12); color: var(--red); }
+  .kpi__delta.flat { background: rgba(149,165,166,0.12); color: var(--text-dim); }
+  .kpi__compare { display: block; font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  .section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin: 24px 0 12px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+  .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .panel h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 12px; font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .mix-row { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .mix-row:last-child { border-bottom: none; }
+  .mix-row__head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .mix-row__bar { height: 8px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
+  .mix-row__bar > div { height: 100%; background: var(--accent); transition: width 0.4s; }
+
+  .pipe-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+  .pipe-summary__cell { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .pipe-summary__label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 4px; }
+  .pipe-summary__count { font-size: 20px; font-weight: 700; }
+  .pipe-summary__value { font-size: 11px; color: var(--text-dim); }
+
+  .stage-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(149,165,166,0.15); color: var(--text-dim); }
+  .stage-chip[data-k="callBooked"]    { background: rgba(52,152,219,0.15); color: var(--blue); }
+  .stage-chip[data-k="callCompleted"] { background: rgba(46,204,113,0.10); color: var(--green); }
+  .stage-chip[data-k="proposalSent"]  { background: rgba(155,89,182,0.15); color: var(--purple); }
+  .stage-chip[data-k="closedWon"]     { background: rgba(46,204,113,0.20); color: var(--green); }
+  .stage-chip[data-k="closedLost"]    { background: rgba(231,76,60,0.15);  color: var(--red); }
+  .stage-chip[data-k="noShow"]        { background: rgba(230,126,34,0.15); color: var(--orange); }
+
+  .empty { text-align: center; padding: 24px; color: var(--text-dim); font-size: 13px; }
+  @media (max-width: 700px) { .kpi__val { font-size: 22px; } .header__title { font-size: 18px; } }
+  /* settings shortcut, top-right corner of every page (scrolls away with the page) */
+  .gear { position: absolute; top: 24px; right: 20px; z-index: 5; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border: 1px solid var(--border, var(--rule-2, #d4d4d4)); border-radius: 10px; background: var(--bg-card, var(--sheet, transparent));
+    color: var(--text-dim, var(--ink-2, #525252)); text-decoration: none; }
+  .gear:hover, .gear[aria-current] { color: var(--accent); border-color: var(--accent); }
+  .gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .gear svg { width: 19px; height: 19px; }
+  .header { padding-right: 52px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="header__brand" id="brandName">EOD System</div>
+      <div class="header__title">Overview</div>
+      <div class="header__sub">Top-line performance with period-over-period comparisons. Drill into <a href="/eod" style="color:var(--accent);">EOD Deep Dive</a> for filters and contacts.</div>
+    </div>
+    <div class="live-pill"><span class="dot"></span><span id="liveLabel">Live · refreshing</span></div>
+  </div>
+
+
+  <div class="controls">
+    <button class="preset" data-range="today">Today</button>
+    <button class="preset" data-range="yesterday">Yesterday</button>
+    <button class="preset active" data-range="7d">Last 7d</button>
+    <button class="preset" data-range="30d">Last 30d</button>
+    <input type="date" id="startDate">
+    <span style="color:var(--text-dim);">→</span>
+    <input type="date" id="endDate">
+    <select id="sourceFilter" class="source-select"><option value="">All sources</option></select>
+    <select id="closerFilter" class="closer-select"><option value="">All closers</option></select>
+    <select id="setterFilter" class="setter-select"><option value="">All setters</option></select>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi__label">Calls Booked</div><div class="kpi__val" id="kpiBooked">...</div><div id="dBooked"></div><span class="kpi__compare" id="cmpRange"></span></div>
+    <div class="kpi"><div class="kpi__label">Calls Showed</div><div class="kpi__val" id="kpiShowed">...</div><div id="dShowed"></div></div>
+    <div class="kpi"><div class="kpi__label">Show Rate</div><div class="kpi__val" id="kpiShowRate">...</div><div id="dShowRate"></div></div>
+    <div class="kpi"><div class="kpi__label">Deals Closed</div><div class="kpi__val" id="kpiClosed">...</div><div id="dClosed"></div></div>
+    <div class="kpi"><div class="kpi__label">Revenue</div><div class="kpi__val" id="kpiRevenue">...</div><div id="dRevenue"></div></div>
+    <div class="kpi"><div class="kpi__label">Close Rate</div><div class="kpi__val" id="kpiCloseRate">...</div><div id="dCloseRate"></div></div>
+  </div>
+
+  <div id="pipelinePanel" class="panel" style="margin-bottom:24px; display:none">
+    <h3>Pipeline Snapshot <span id="pipeMeta" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim);font-size:12px;margin-left:8px;"></span></h3>
+    <div class="pipe-summary" id="pipeSummary"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Source Mix (revenue share)</h3>
+      <div id="sourceMix"></div>
+    </div>
+    <div class="panel">
+      <h3>Top Closers</h3>
+      <table><thead><tr><th>Closer</th><th class="num">Showed</th><th class="num">Closed</th><th class="num">Revenue</th><th class="num">Close %</th></tr></thead><tbody id="topClosers"></tbody></table>
+    </div>
+    <div class="panel">
+      <h3>Top Setters</h3>
+      <table><thead><tr><th>Setter</th><th class="num">Booked</th><th class="num">Showed</th><th class="num">Closed</th><th class="num">Revenue</th></tr></thead><tbody id="topSetters"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let CONFIG = null;
+
+function fmtDate(d) { return d.toISOString().slice(0, 10); }
+function todayStr() { return fmtDate(new Date()); }
+function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return fmtDate(d); }
+function fmtNum(n) { return Number(n || 0).toLocaleString('en-GB'); }
+function fmtMoney(n) { const sym = (CONFIG && CONFIG.currency_symbol) || '£'; return sym + Number(n || 0).toLocaleString('en-GB', { maximumFractionDigits: 0 }); }
+function fmtPct(n) { return (Number(n || 0) * 100).toFixed(1) + '%'; }
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+function setRange(preset) {
+  document.querySelectorAll('.controls .preset').forEach(b => b.classList.toggle('active', b.dataset.range === preset));
+  let s, e = todayStr();
+  if (preset === 'today') s = e;
+  else if (preset === 'yesterday') { s = daysAgo(1); e = s; }
+  else if (preset === '7d') s = daysAgo(7);
+  else if (preset === '30d') s = daysAgo(30);
+  else s = daysAgo(7);
+  document.getElementById('startDate').value = s;
+  document.getElementById('endDate').value = e;
+  refresh();
+}
+document.querySelectorAll('.controls .preset').forEach(btn => btn.addEventListener('click', () => setRange(btn.dataset.range)));
+['startDate','endDate','sourceFilter','closerFilter','setterFilter'].forEach(id => document.getElementById(id).addEventListener('change', refresh));
+
+function deltaPill(d) {
+  if (!d || d.pct === null || d.pct === undefined) return `<div class="kpi__delta flat">vs prior</div>`;
+  const cls = d.pct > 0 ? 'up' : d.pct < 0 ? 'down' : 'flat';
+  const arrow = d.pct > 0 ? '▲' : d.pct < 0 ? '▼' : '·';
+  const sign = d.pct > 0 ? '+' : '';
+  return `<div class="kpi__delta ${cls}">${arrow} ${sign}${d.pct}% vs prior</div>`;
+}
+
+function applySources() {
+  const sources = (CONFIG && (CONFIG.closer_lead_sources || CONFIG.lead_sources)) || [];
+  document.getElementById('sourceFilter').innerHTML = '<option value="">All sources</option>' + sources.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+}
+
+function syncDropdowns(closers, setters) {
+  function repop(id, values, placeholder) {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    const seen = new Set(values);
+    if (current && !seen.has(current)) values = [...values, current];
+    sel.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${esc(v)}"${v === current ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  }
+  repop('closerFilter', closers || [], 'All closers');
+  repop('setterFilter', setters || [], 'All setters');
+}
+
+function renderPipeline(pipeline) {
+  const panel = document.getElementById('pipelinePanel');
+  if (!pipeline || !pipeline.available) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  document.getElementById('pipeMeta').textContent = `· ${(pipeline.provider || '').toUpperCase()} · ${fmtNum(pipeline.total_count)} opps · ${fmtMoney(pipeline.total_value)} total value (live)`;
+  document.getElementById('pipeSummary').innerHTML = (pipeline.stages || []).map(s => `
+    <div class="pipe-summary__cell">
+      <div class="pipe-summary__label"><span class="stage-chip" data-k="${esc(s.key)}">${esc(s.label)}</span></div>
+      <div class="pipe-summary__count">${fmtNum(s.count)}</div>
+      <div class="pipe-summary__value">${s.value ? fmtMoney(s.value) : 'n/a'}</div>
+    </div>
+  `).join('');
+}
+
+function renderSourceMix(mix) {
+  const wrap = document.getElementById('sourceMix');
+  if (!mix || !mix.length) { wrap.innerHTML = `<div class="empty">No revenue in this range yet.</div>`; return; }
+  const max = Math.max(1, ...mix.map(m => m.revenue || 0));
+  wrap.innerHTML = mix.map(m => `
+    <div class="mix-row" data-src="${esc(m.name)}">
+      <div class="mix-row__head">
+        <span><strong>${esc(m.name)}</strong> · ${fmtNum(m.booked)} booked · ${fmtNum(m.closed)} closed</span>
+        <span><strong>${fmtMoney(m.revenue)}</strong> · ${m.revenue_share}%</span>
+      </div>
+      <div class="mix-row__bar"><div style="width:${Math.round((m.revenue / max) * 100)}%"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderLeaderboard(tbodyId, rows, cols) {
+  const tb = document.getElementById(tbodyId);
+  if (!rows || !rows.length) { tb.innerHTML = `<tr><td colspan="${cols.length}" class="empty">No activity in this range.</td></tr>`; return; }
+  tb.innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.name)}</td>
+      ${cols.slice(1).map(c => {
+        const val = r[c.key] || 0;
+        const formatted = c.fmt === 'money' ? fmtMoney(val) : c.fmt === 'pct' ? fmtPct(val) : fmtNum(val);
+        return `<td class="num">${formatted}</td>`;
+      }).join('')}
+    </tr>
+  `).join('');
+}
+
+async function refresh() {
+  const s = document.getElementById('startDate').value;
+  const e = document.getElementById('endDate').value;
+  const params = new URLSearchParams({ action: 'overview_data' });
+  if (s) params.set('start', s);
+  if (e) params.set('end', e);
+  const src = document.getElementById('sourceFilter').value; if (src) params.set('source', src);
+  const closer = document.getElementById('closerFilter').value; if (closer) params.set('closer', closer);
+  const setter = document.getElementById('setterFilter').value; if (setter) params.set('setter', setter);
+  const live = document.getElementById('liveLabel');
+  live.textContent = 'Live · loading…';
+  try {
+    const r = await fetch(API + '?' + params.toString(), { cache: 'no-store' });
+    const data = await r.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'unknown error');
+
+    const k = data.kpis || {};
+    document.getElementById('kpiBooked').textContent = fmtNum(k.booked && k.booked.value);
+    document.getElementById('kpiShowed').textContent = fmtNum(k.showed && k.showed.value);
+    document.getElementById('kpiShowRate').textContent = fmtPct(k.show_rate && k.show_rate.value);
+    document.getElementById('kpiClosed').textContent = fmtNum(k.closed && k.closed.value);
+    document.getElementById('kpiRevenue').textContent = fmtMoney(k.revenue && k.revenue.value);
+    document.getElementById('kpiCloseRate').textContent = fmtPct(k.close_rate && k.close_rate.value);
+
+    document.getElementById('dBooked').innerHTML    = deltaPill(k.booked && k.booked.delta);
+    document.getElementById('dShowed').innerHTML    = deltaPill(k.showed && k.showed.delta);
+    document.getElementById('dShowRate').innerHTML  = deltaPill(k.show_rate && k.show_rate.delta);
+    document.getElementById('dClosed').innerHTML    = deltaPill(k.closed && k.closed.delta);
+    document.getElementById('dRevenue').innerHTML   = deltaPill(k.revenue && k.revenue.delta);
+    document.getElementById('dCloseRate').innerHTML = deltaPill(k.close_rate && k.close_rate.delta);
+    document.getElementById('cmpRange').textContent = `${data.date_range.start} → ${data.date_range.end} vs ${data.prior_range.start} → ${data.prior_range.end}`;
+
+    syncDropdowns(data.closers, data.setters);
+    renderPipeline(data.pipeline);
+    renderSourceMix(data.source_mix);
+    renderLeaderboard('topClosers', data.top_closers, [
+      { key: 'name' }, { key: 'showed', fmt: 'num' }, { key: 'closed', fmt: 'num' }, { key: 'revenue', fmt: 'money' }, { key: 'close_rate', fmt: 'pct' },
+    ]);
+    renderLeaderboard('topSetters', data.top_setters, [
+      { key: 'name' }, { key: 'booked', fmt: 'num' }, { key: 'showed', fmt: 'num' }, { key: 'closed', fmt: 'num' }, { key: 'revenue', fmt: 'money' },
+    ]);
+
+    live.textContent = 'Live · updated ' + new Date().toLocaleTimeString();
+  } catch (err) {
+    live.textContent = 'Live · error: ' + err.message;
+  }
+}
+
+async function bootstrap() {
+  try {
+    const r = await fetch(API + '?action=config', { cache: 'no-store' });
+    CONFIG = await r.json();
+    if (CONFIG && CONFIG.brand) {
+      document.getElementById('brandName').textContent = CONFIG.brand.name || 'EOD System';
+      if (CONFIG.brand.color) document.documentElement.style.setProperty('--accent', CONFIG.brand.color);
+      document.title = `Overview | ${CONFIG.brand.name || 'EOD System'}`;
+    }
+    applySources();
+  } catch (e) { /* keep defaults */ }
+  setRange('7d');
+  setInterval(refresh, 60000);
+}
+bootstrap();
+</script>
+</body>
+</html>

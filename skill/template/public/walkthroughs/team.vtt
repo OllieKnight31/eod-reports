@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:09.296
+This walkthrough adds your team. Names turn the name box on each report into a pick list, and member IDs make reminders actually notify each person.
+
+00:00:09.496 --> 00:00:17.654
+On the settings page, under Team, switch on the roles you have. Then type each person’s name and press Add. Names save straight away.
+
+00:00:17.854 --> 00:00:25.585
+To make reminders notify someone on Slack, open their profile, press the three dots for More, and choose Copy member ID.
+
+00:00:25.785 --> 00:00:33.495
+On Discord, turn on Developer Mode in your settings, under Advanced. Then right click the person and choose Copy User ID.
+
+00:00:33.695 --> 00:00:42.920
+Back on the settings page, paste the ID into the box next to their name, and press Save team. Untick Remind for anyone who should be listed but never chased.
+
+00:00:43.120 --> 00:00:49.187
+That is your team set up. Reports now have pick lists, and reminders reach the right person.

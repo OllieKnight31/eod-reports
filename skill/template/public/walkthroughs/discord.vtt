@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:08.933
+This walkthrough connects Discord using webhooks. A webhook is a private web address that posts into one channel. It takes about a minute for each channel.
+
+00:00:09.133 --> 00:00:15.329
+In Discord, hover over the channel you want reports in, and click the cog icon to edit the channel.
+
+00:00:15.529 --> 00:00:19.804
+Open Integrations, then Webhooks, and press New Webhook.
+
+00:00:20.004 --> 00:00:25.218
+Give the webhook a name, then press Copy Webhook URL. Treat it like a password.
+
+00:00:25.418 --> 00:00:36.029
+On the settings page, paste it into the matching box. Repeat for each channel. You can reuse one channel for several reports. Then press Save Discord, and Send test messages.
+
+00:00:36.229 --> 00:00:42.403
+That is Discord connected. Reports will post as they are filed, along with the daily scorecard.

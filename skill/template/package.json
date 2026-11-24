@@ -1,0 +1,19 @@
+{
+  "name": "eod-system",
+  "version": "1.0.0",
+  "description": "Templated EOD reporting + sales pipeline dashboard. Drop-in for any client. CRM-agnostic via adapter (GHL or none).",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "check": "node --check api/index.js && node --check api/_lib/config.js && node --check api/_lib/sheets.js && node --check api/_lib/notify.js && node --check api/_lib/crm-adapter.js && node --check api/_lib/ghl-write.js && node --check api/_lib/handlers/setter-eod.js && node --check api/_lib/handlers/closer-outcome.js && node --check api/_lib/handlers/dashboard.js && node --check api/_lib/handlers/overview.js && node --check api/_lib/settings-store.js && node --check api/_lib/auth.js && node --check api/_lib/handlers/settings.js && node --check api/_lib/handlers/dialler-eod.js && node --check api/_lib/handlers/nudge.js && node --check api/_lib/handlers/scorecard.js && node --check scripts/set-cron.js && node --check scripts/configure.js && node --check scripts/push-env.js && node --check scripts/dev.js && echo OK",
+    "dev": "node scripts/dev.js",
+    "configure": "node scripts/configure.js",
+    "push-env": "node scripts/push-env.js",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}

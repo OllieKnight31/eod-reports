@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:08.016
+This is the other way to connect Discord. You create one bot, then pick each channel from a list instead of pasting an address for every one.
+
+00:00:08.216 --> 00:00:15.286
+Open the Discord Developer Portal from the link in the guide. Press New Application, give it a name, and create it.
+
+00:00:15.486 --> 00:00:22.300
+In the left menu open Bot. Press Reset Token, then copy the token. Discord only shows it once.
+
+00:00:22.500 --> 00:00:32.685
+Open OAuth2, then the URL Generator. Tick bot. Then tick View Channels, Send Messages, and Embed Links. Open the link it generates, and add the bot to your server.
+
+00:00:32.885 --> 00:00:42.664
+On the settings page, open Prefer a bot, paste the token, and press Save Discord. Press Connect and load channels, pick a channel for each report, and save again.
+
+00:00:42.864 --> 00:00:48.931
+That is your Discord bot connected. You can change which channel each report goes to at any time.

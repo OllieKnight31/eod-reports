@@ -1,0 +1,25 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:08.677
+This walkthrough connects Go High Level. It shows your live pipeline on the dashboard, and moves opportunities when your closers log a call outcome.
+
+00:00:08.877 --> 00:00:18.294
+Open Go High Level and switch into the sub account your sales team uses. Go to Settings, then Private Integrations, and press Create new integration.
+
+00:00:18.494 --> 00:00:25.351
+Tick these scopes: view and edit contacts, view and edit opportunities, and view pipelines. Then create it.
+
+00:00:25.551 --> 00:00:29.399
+Copy the token. It starts with pit-.
+
+00:00:29.599 --> 00:00:36.136
+Your location ID is in the address bar, right after the word location. You can copy the whole address.
+
+00:00:36.336 --> 00:00:46.030
+On the settings page, under CRM, choose Go High Level. Paste the token and the location ID, press Save CRM, then Connect and load pipelines.
+
+00:00:46.230 --> 00:00:53.257
+Choose your pipeline. Then match each dashboard column to a stage in it, and save. Leave a column on Not used to hide it.
+
+00:00:53.457 --> 00:01:00.975
+That is Go High Level connected. Your pipeline is live on the dashboard, and call outcomes move each opportunity for you.

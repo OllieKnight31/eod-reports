@@ -1,0 +1,31 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:08.592
+This walkthrough connects Slack, so every report, the daily scorecard and reminders post straight into your channels. It takes about three minutes.
+
+00:00:08.792 --> 00:00:14.923
+Open the Slack apps page from the link in the guide. Press Create New App, and choose From scratch.
+
+00:00:15.123 --> 00:00:20.785
+Give the app a name, such as EOD Reports. Pick your workspace, and press Create App.
+
+00:00:20.985 --> 00:00:30.658
+In the left menu, open OAuth and Permissions. Scroll to Bot Token Scopes and add these four: chat write, chat write public, channels read, and groups read.
+
+00:00:30.858 --> 00:00:37.821
+Scroll back to the top of that page and press Install to Workspace. Slack asks for permission. Press Allow.
+
+00:00:38.021 --> 00:00:43.854
+You now have a Bot User OAuth Token. It starts with xoxb. Press Copy.
+
+00:00:44.054 --> 00:00:51.465
+On the settings page, paste it into the Bot token box and press Save Slack. Then press Connect and load channels.
+
+00:00:51.665 --> 00:01:01.167
+The boxes turn into lists of your real channels. Pick where each report should go, press Save Slack again, then press Send test messages and check your channels.
+
+00:01:01.367 --> 00:01:10.272
+One last thing. If a channel is private, the app cannot post there until you invite it. In that channel, type /invite, followed by your app name.
+
+00:01:10.472 --> 00:01:19.291
+That is Slack connected. Reports post as they are filed, the daily scorecard posts on its own, and reminders chase anyone who has not filed.

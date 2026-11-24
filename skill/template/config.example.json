@@ -1,0 +1,57 @@
+{
+  "_comment": "Reference config, values map to env vars. Set them in Vercel, not in this file. This is here to document the full schema.",
+
+  "brand": {
+    "name": "Your Brand",
+    "color": "#2ECC71",
+    "timezone": "Europe/London"
+  },
+
+  "lead_sources": ["Webinar", "DM", "Lead Magnet", "VSL", "Community"],
+
+  "sheet": {
+    "spreadsheet_id": "1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "tabs": {
+      "closer_outcomes": "CLOSER OUTCOMES",
+      "setter_activity": "SETTER ACTIVITY"
+    }
+  },
+
+  "notify": {
+    "setter": {
+      "discord": "https://discord.com/api/webhooks/.../...",
+      "slack":   "https://hooks.slack.com/services/T.../B.../..."
+    },
+    "closer": {
+      "discord": "https://discord.com/api/webhooks/.../...",
+      "slack":   "https://hooks.slack.com/services/T.../B.../..."
+    }
+  },
+
+  "crm": {
+    "provider": "ghl",
+    "ghl": {
+      "api_key": "pit-...",
+      "location_id": "abc123",
+      "pipeline_id": "abc123",
+      "stages": {
+        "callBooked":    "<stage id from GoHighLevel>",
+        "callCompleted": "<stage id from GoHighLevel>",
+        "proposalSent":  "<stage id from GoHighLevel>",
+        "closedWon":     "<stage id from GoHighLevel>",
+        "closedLost":    "<stage id from GoHighLevel>",
+        "noShow":        "<stage id from GoHighLevel>"
+      }
+    }
+  },
+
+  "closer_stage_order": ["callBooked", "callCompleted", "proposalSent", "closedWon", "closedLost", "noShow"],
+  "closer_stage_labels": {
+    "callBooked": "Call Booked",
+    "callCompleted": "Call Completed",
+    "proposalSent": "Proposal Sent",
+    "closedWon": "Closed Won",
+    "closedLost": "Closed Lost",
+    "noShow": "No Show"
+  }
+}

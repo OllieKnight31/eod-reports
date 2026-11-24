@@ -1,0 +1,37 @@
+WEBVTT
+
+00:00:00.050 --> 00:00:09.083
+This walkthrough connects your Google Sheet, so every report your team files has somewhere to be saved. It takes about five minutes, and you only do it once.
+
+00:00:09.283 --> 00:00:16.801
+First, open a new Google Sheet by going to sheets.new. Give it a name, then copy the address from the top of your browser.
+
+00:00:17.001 --> 00:00:22.193
+Back on the settings page, paste that address into the box called Google Sheet link.
+
+00:00:22.393 --> 00:00:29.229
+Next, open Google Cloud and create a new project. It is free. Give it any name you like and press Create.
+
+00:00:29.429 --> 00:00:35.837
+Now switch on the Google Sheets API. Open its page from the link in the guide, and press Enable.
+
+00:00:36.037 --> 00:00:45.283
+Then create a service account. Think of it as a robot login that is only allowed to write to your sheet. Give it a name, press Create and continue, then Done.
+
+00:00:45.483 --> 00:00:51.913
+Click the service account you just made. Open the Keys tab, press Add key, and choose Create new key.
+
+00:00:52.113 --> 00:00:58.671
+Choose JSON, and press Create. A small file downloads to your computer. That file is the key.
+
+00:00:58.871 --> 00:01:08.480
+Open the downloaded file with any text editor. Select everything, copy it, and paste it into the Service account key box. Then press Save Google Sheets.
+
+00:01:08.680 --> 00:01:16.817
+After saving, a green box shows an email address. Go back to your Google Sheet, press Share, paste that address, choose Editor, and send.
+
+00:01:17.017 --> 00:01:26.775
+Finally, press Test connection. When it says connected, you are finished. The tabs and headings are created automatically the first time someone files a report.
+
+00:01:26.975 --> 00:01:36.349
+That is Google Sheets connected. Every report now saves straight to your sheet. Next, connect Slack or Discord so the team sees each report as it comes in.

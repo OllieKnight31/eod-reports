@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Scorecard</title>
+<script src="/auth.js" data-allow="owner,manager,setter,dialler,closer"></script>
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ground: #04101F; --sheet: #0A1F3B; --panel: #0E2544; --rule: #1E3557; --rule-2: #2E4A70;
+    --ink: #EAF1FA; --ink-2: #C3CFE0; --mute: #8C9EB8;
+    --good: #5BD190; --bad: #F2857A; --warn: #E9B04A;
+    --good-wash: rgba(91,209,144,.14); --bad-wash: rgba(242,133,122,.14); --warn-wash: rgba(233,176,74,.14); --na-wash: rgba(140,158,184,.14);
+    --accent: #5BD190;
+  }
+  body { font-family: Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: var(--ground); color: var(--ink); min-height: 100vh; padding: 20px; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; color-scheme: dark; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .header { padding: 12px 0; }
+  .header__brand { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; font-weight: 600; }
+  .header__title { font-size: 22px; font-weight: 700; }
+  .header__sub { font-size: 13px; color: var(--mute); margin-top: 4px; }
+
+  .nav { display: flex; gap: 2px; border-bottom: 1px solid var(--rule-2); margin-bottom: 20px; overflow-x: auto; }
+  .nav a { padding: 10px 16px; color: var(--ink-2); text-decoration: none; font-size: 13px; font-weight: 600; border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+  .nav a:hover { color: var(--ink); }
+  .nav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* same controls as Overview and EOD Deep Dive */
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .controls .preset, .controls input[type=date], .controls select { height: 36px; padding: 0 14px; background: var(--sheet); border: 1px solid var(--rule-2); color: var(--ink); font-size: 13px; font-family: inherit; }
+  .controls .preset { cursor: pointer; font-weight: 600; color: var(--ink-2); }
+  .controls .preset:hover { color: var(--ink); border-color: var(--mute); }
+  .controls .preset.active { background: var(--accent); border-color: var(--accent); color: var(--ground); }
+  .controls select { min-width: 150px; }
+  .controls .arrow { color: var(--mute); }
+  .controls .clear { border: none; background: none; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 4px; font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* team KPIs: the same targets multiplied up to the whole team */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-bottom: 10px; }
+  .kpi { background: var(--sheet); border: 1px solid var(--rule); border-left: 3px solid var(--rule-2); padding: 14px 16px 12px; min-width: 0; }
+  .kpi.ok { border-left-color: var(--good); } .kpi.warn { border-left-color: var(--warn); } .kpi.crit { border-left-color: var(--bad); }
+  .kpi__top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .kpi__label { font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+  .kpi__val { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; line-height: 1.15; }
+  .kpi.ok .kpi__val { color: var(--good); } .kpi.crit .kpi__val { color: var(--bad); } .kpi.warn .kpi__val { color: var(--warn); }
+  .kpi__foot { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--mute); }
+  .kpi__sub { font-size: 11.5px; color: var(--mute); margin-top: 3px; }
+  .kpi .st { font-size: 10.5px; padding: 2px 7px; }
+  .team-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mute); margin: 0 0 10px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 12px; color: var(--mute); margin: 6px 0 20px; }
+
+  /* ── person cards ── */
+  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; align-items: start; }
+  .pcard { background: var(--sheet); border: 1px solid var(--rule); padding: 18px 22px 10px; min-width: 0; }
+  .pcard__head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 14px; }
+  .pcard__name { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pcard__name button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; text-align: left; }
+  .pcard__name button:hover { color: var(--accent); }
+  .role-tag { font-size: 13px; font-weight: 500; color: var(--ink-2); border: 1px solid var(--rule-2); padding: 3px 11px; white-space: nowrap; }
+
+  .mrow { border-top: 1px solid var(--rule); padding: 13px 0 12px; }
+  .mrow__top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .mrow__label { font-size: 15px; color: var(--ink-2); min-width: 0; }
+  .mrow__val { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mrow__val.na { color: var(--mute); font-weight: 500; font-size: 15px; }
+  /* meter runs 0 → 2× target, so the target tick always sits mid-bar */
+  .meter { position: relative; height: 5px; background: var(--rule); margin: 9px 0 8px; }
+  .meter__fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--mute); }
+  .meter__fill.ok { background: var(--good); } .meter__fill.warn { background: var(--warn); } .meter__fill.crit { background: var(--bad); }
+  .meter__tick { position: absolute; left: 50%; top: -5px; width: 2px; height: 15px; background: var(--ink-2); }
+  .meter.na .meter__tick { background: var(--rule-2); }
+  .mrow__foot { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; font-size: 13px; color: var(--mute); }
+  .mrow__foot .target { min-width: 0; }
+  .delta { color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .delta .arr { font-size: 10px; margin-right: 4px; }
+  .delta.good .arr { color: var(--good); } .delta.bad .arr { color: var(--bad); }
+  .delta.flat { color: var(--mute); }
+  .st { font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; padding: 3px 10px; white-space: nowrap; }
+  .st.ok { color: var(--good); background: var(--good-wash); } .st.warn { color: var(--warn); background: var(--warn-wash); }
+  .st.crit { color: var(--bad); background: var(--bad-wash); } .st.na { color: var(--mute); background: var(--na-wash); }
+  .mrow__note { font-size: 13px; color: var(--mute); }
+
+  /* ── one person: detail ── */
+  .detail { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+  .box { background: var(--sheet); border: 1px solid var(--rule); padding: 16px 20px; min-width: 0; }
+  .box--wide { grid-column: 1 / -1; }
+  .box h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mute); margin-bottom: 10px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px 8px; }
+  .stat__val { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat__label { font-size: 10.5px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: 13.5px; }
+  .row:last-child { border-bottom: none; }
+  .row__main { min-width: 0; }
+  .row__sub { font-size: 12px; color: var(--mute); margin-top: 2px; }
+  .row__side { text-align: right; white-space: nowrap; }
+  .note { font-size: 13px; color: var(--ink-2); line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
+  .note strong { color: var(--ink); font-weight: 600; }
+  .twrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mute); border-bottom: 1px solid var(--rule-2); white-space: nowrap; font-weight: 700; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+  td.ok { color: var(--good); font-weight: 700; } td.warn { color: var(--warn); font-weight: 700; } td.crit { color: var(--bad); font-weight: 700; }
+  td.na { color: var(--mute); }
+
+  .empty { padding: 28px; text-align: center; color: var(--mute); font-size: 13px; border: 1px dashed var(--rule-2); background: var(--panel); }
+  .footer { margin-top: 32px; font-size: 11px; color: var(--mute); text-align: center; }
+  /* settings shortcut, top-right corner of every page (scrolls away with the page) */
+  .gear { position: absolute; top: 24px; right: 20px; z-index: 5; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border: 1px solid var(--border, var(--rule-2, #d4d4d4)); border-radius: 10px; background: var(--bg-card, var(--sheet, transparent));
+    color: var(--text-dim, var(--ink-2, #525252)); text-decoration: none; }
+  .gear:hover, .gear[aria-current] { color: var(--accent); border-color: var(--accent); }
+  .gear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .gear svg { width: 19px; height: 19px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header__brand" id="brandName">EOD System</div>
+    <div class="header__title">Scorecard</div>
+    <div class="header__sub" id="subtitle">Everyone’s numbers against target.</div>
+  </div>
+
+  <div class="controls">
+    <button class="preset" data-range="today">Today</button>
+    <button class="preset" data-range="yesterday">Yesterday</button>
+    <button class="preset" data-range="7d">Last 7d</button>
+    <button class="preset" data-range="30d">Last 30d</button>
+    <input type="date" id="startDate" aria-label="From date">
+    <span class="arrow">→</span>
+    <input type="date" id="endDate" aria-label="To date">
+    <select id="roleFilter" aria-label="Filter by role"></select>
+    <select id="personFilter" aria-label="Filter by person"></select>
+    <button class="clear" id="clearFilters" hidden>Clear filters</button>
+  </div>
+
+  <div class="team-title" id="teamTitle">Team</div>
+  <div id="team" class="kpi-grid"></div>
+  <div class="legend" id="legend"></div>
+  <div id="people" class="people"></div>
+  <div id="detail"></div>
+  <div class="footer" id="footer"></div>
+</div>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+const el = (tag, props = {}, ...kids) => {
+  const n = Object.assign(document.createElement(tag), props);
+  for (const k of kids) if (k != null && k !== '') n.append(k);
+  return n;
+};
+let data = null;
+let CUR = '$';
+const money = (n) => `${CUR}${Math.round(n).toLocaleString('en-US')}`;
+const rate = (r) => (r == null ? 'n/a' : `${r}%`);
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const niceDate = (d, opts = { day: 'numeric', month: 'short' }) => new Date(d + 'T12:00:00').toLocaleDateString(undefined, opts);
+const ROLE_LABEL = { setter: 'Setters', dialler: 'Diallers', closer: 'Closers' };
+const ROLE_ONE = { setter: 'Setter', dialler: 'Dialler', closer: 'Closer' };
+const ST_LABEL = { ok: 'On target', warn: 'Below', crit: 'Critical', na: 'N/A' };
+
+// What is being looked at. Kept in the address bar so a view can be bookmarked or shared.
+const params = new URLSearchParams(location.search);
+const view = {
+  range: params.get('range') || (params.get('start') || params.get('date') ? '' : '7d'),
+  start: params.get('start') || params.get('date') || '',
+  end: params.get('end') || params.get('date') || '',
+  role: params.get('role') || '',
+  person: params.get('person') || '',
+};
+
+fetch('/api?action=config').then(r => r.json()).then(cfg => {
+  if (!cfg || !cfg.brand) return;
+  $('#brandName').textContent = cfg.brand.name || 'EOD System';
+  if (cfg.brand.color) document.documentElement.style.setProperty('--accent', cfg.brand.color);
+  document.title = `Scorecard | ${cfg.brand.name || 'EOD'}`;
+}).catch(() => {});
+
+const stChip = (status, text) => el('span', { className: 'st ' + status, textContent: text || ST_LABEL[status] });
+
+// ── One metric row: label + value, meter with the target tick, target · change · status ──
+function meter(m) {
+  if (m.status === 'na') return el('div', { className: 'meter na', ariaHidden: 'true' }, el('div', { className: 'meter__tick' }));
+  const fill = el('div', { className: 'meter__fill ' + m.status });
+  fill.style.width = m.fill + '%';
+  return el('div', { className: 'meter', role: 'img', ariaLabel: `${m.display}, ${m.target_display}, ${ST_LABEL[m.status]}` },
+    fill, el('div', { className: 'meter__tick', title: 'target' }));
+}
+
+function deltaNode(d) {
+  if (!d) return el('span', { className: 'delta flat', title: 'No figure for the previous period', textContent: 'no earlier figure' });
+  if (d.dir === 0) return el('span', { className: 'delta flat', title: 'No change vs the previous period' }, el('span', { className: 'arr', textContent: '·' }), d.txt);
+  return el('span', { className: 'delta ' + (d.good ? 'good' : 'bad'), title: `vs the previous period (${d.good ? 'better' : 'worse'})` },
+    el('span', { className: 'arr', textContent: d.dir > 0 ? '▲' : '▼' }), d.txt);
+}
+
+const metricRow = (m, label = m.label) => el('div', { className: 'mrow' },
+  el('div', { className: 'mrow__top' },
+    el('span', { className: 'mrow__label', textContent: label }),
+    el('span', { className: 'mrow__val' + (m.value == null ? ' na' : ''), textContent: m.display })),
+  meter(m),
+  el('div', { className: 'mrow__foot' },
+    el('span', { className: 'target', textContent: m.target_display }), deltaNode(m.delta), stChip(m.status)));
+
+// A team tile: the team's number against the team's target (per-person target × people × days).
+const teamTile = (m) => el('div', { className: 'kpi ' + m.status },
+  el('div', { className: 'kpi__top' }, el('span', { className: 'kpi__label', textContent: m.label }), stChip(m.status)),
+  el('div', { className: 'kpi__val', textContent: m.display }),
+  meter(m),
+  el('div', { className: 'kpi__foot' }, el('span', { textContent: m.target_display }), deltaNode(m.delta)),
+  m.note ? el('div', { className: 'kpi__sub', textContent: m.note }) : null);
+
+// The opening row: days filed out of days expected, when they last filed, what's missing.
+function filedHead(c) {
+  const when = c.last_filed
+    ? 'last filed ' + new Date(c.last_filed).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : 'nothing filed';
+  const unfiled = c.days_missed.length
+    ? ' · unfiled ' + c.days_missed.slice(-3).map(d => niceDate(d)).join(', ') + (c.days_missed.length > 3 ? ` +${c.days_missed.length - 3}` : '')
+    : '';
+  return el('div', { className: 'mrow' },
+    el('div', { className: 'mrow__top' },
+      el('span', { className: 'mrow__label', textContent: 'EOD filed' }),
+      el('span', { className: 'mrow__val', textContent: `${c.days_filed} / ${plural(c.days_expected, 'day')}` })),
+    meter(c.filed),
+    el('div', { className: 'mrow__note', textContent: when + unfiled }));
+}
+
+// The name is a shortcut into that one person's view.
+function nameNode(role, name) {
+  if (data.filter.person || isRep()) return name;
+  return el('button', { type: 'button', textContent: name, title: `Open ${name}’s detail`, onclick: () => { view.role = role; view.person = name; load(); } });
+}
+
+function personCard(c) {
+  return el('div', { className: 'pcard' },
+    el('div', { className: 'pcard__head' },
+      el('div', { className: 'pcard__name' }, nameNode(c.role, c.name)),
+      el('span', { className: 'role-tag', textContent: ROLE_ONE[c.role] })),
+    filedHead(c),
+    ...c.metrics.map(m => metricRow(m)),
+    metricRow(c.filed, 'EOD filed (of expected days)'));
+}
+
+// Someone on the roster with nothing filed in the period.
+function missingCard(role, name) {
+  const expected = data.expected_days[role] || 0;
+  const c = { role, name, days_filed: 0, days_expected: expected, days_missed: [], last_filed: '',
+    filed: { value: 0, display: '0%', target_display: 'target ≥ 100%', status: 'crit', fill: 0, delta: null } };
+  return el('div', { className: 'pcard' },
+    el('div', { className: 'pcard__head' },
+      el('div', { className: 'pcard__name' }, nameNode(role, name)),
+      el('span', { className: 'role-tag', textContent: ROLE_ONE[role] })),
+    filedHead(c),
+    metricRow(c.filed, 'EOD filed (of expected days)'),
+    el('div', { className: 'mrow' }, el('div', { className: 'mrow__note', textContent: data.single_day ? 'No report for this day yet.' : 'No reports in this period.' })));
+}
+
+// ── Detail for one person: day by day, everything else they reported, calls, notes ──
+const stat = (label, value) => el('div', {}, el('div', { className: 'stat__val', textContent: value }), el('div', { className: 'stat__label', textContent: label }));
+const box = (title, wide, ...kids) => el('div', { className: 'box' + (wide ? ' box--wide' : '') }, el('h3', { textContent: title }), ...kids);
+
+function dayTable(c) {
+  const labels = (c.by_day.find(d => d.metrics.length) || { metrics: [] }).metrics.map(m => m.label.replace(' / day', ''));
+  const rows = [...c.by_day.map(d => ({ date: d.date, d })), ...c.days_missed.map(date => ({ date, d: null }))]
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const body = rows.map(({ date, d }) => {
+    const tr = el('tr', {}, el('td', { textContent: niceDate(date, { weekday: 'short', day: 'numeric', month: 'short' }) }));
+    if (!d) { tr.append(el('td', { className: 'crit', colSpan: labels.length + 1, textContent: 'Not filed' })); return tr; }
+    if (d.zero_call) { tr.append(el('td', { className: 'na', colSpan: labels.length + 1, textContent: 'Filed, no calls' })); return tr; }
+    for (const m of d.metrics) tr.append(el('td', { className: m.status, textContent: m.display }));
+    tr.append(el('td', { textContent: d.kpis_total ? `${d.kpis_hit}/${d.kpis_total}` : 'n/a' }));
+    return tr;
+  });
+  return el('div', { className: 'twrap' }, el('table', {},
+    el('thead', {}, el('tr', {}, el('th', { textContent: 'Day' }), ...labels.map(l => el('th', { textContent: l })), el('th', { textContent: 'On target' }))),
+    el('tbody', {}, ...body)));
+}
+
+const OUTCOME_ST = { won: 'ok', lost: 'crit', no_show: 'warn', follow_up: 'na', rescheduled: 'na', other: 'na' };
+const MAX_CALLS_SHOWN = 40;
+function callList(c) {
+  const rows = c.call_list.slice(0, MAX_CALLS_SHOWN).map((call) => {
+    const by = [call.date && niceDate(call.date), call.source, call.setter && `setter ${call.setter}`, call.dialler && `dialler ${call.dialler}`,
+      call.lost_reason && `lost: ${call.lost_reason}`, call.follow_up_date && `follow-up ${call.follow_up_date}`].filter(Boolean).join(' · ');
+    return el('div', { className: 'row' },
+      el('div', { className: 'row__main' }, el('div', { textContent: call.prospect }),
+        by ? el('div', { className: 'row__sub', textContent: by }) : null,
+        call.notes ? el('div', { className: 'row__sub', textContent: call.notes }) : null),
+      el('div', { className: 'row__side' }, stChip(OUTCOME_ST[call.kind] || 'na', String(call.outcome).replace(/_/g, ' ')),
+        call.ticket ? el('div', { className: 'row__sub', textContent: money(call.ticket) }) : null));
+  });
+  if (c.call_list.length > MAX_CALLS_SHOWN) rows.push(el('div', { className: 'row' }, el('div', { className: 'row__sub', textContent: `+ ${c.call_list.length - MAX_CALLS_SHOWN} more. Narrow the dates to see them.` })));
+  return rows;
+}
+
+const OTHER_STATS = {
+  setter: (c) => [stat('Messages', c.messages), stat('Outbounds', c.outbounds), stat('Inbounds', c.inbounds), stat('Follow-ups', c.followups),
+    stat('Links sent', c.links), stat('Calls proposed', c.calls_proposed), stat('Calls booked', c.calls_booked), stat('No shows', c.no_shows),
+    stat('Cancellations', c.cancellations), stat('New followers', c.new_followers), stat('Qualified', c.qualified),
+    stat(data.single_day ? 'Lead quality' : 'Avg lead quality', c.lead_quality ? `${c.lead_quality}/5` : 'n/a')],
+  dialler: (c) => [stat('Dials', c.dials), stat('Conversations', c.conversations), stat('Leads triaged', c.leads_triaged), stat('All have notes', c.all_notes || 'n/a'),
+    stat('Set calls due', c.set_due), stat('Set calls showed', c.set_showed), stat('Triaged due', c.triaged_due), stat('Triaged showed', c.triaged_showed),
+    stat('Set booked', c.set_booked), stat('Triaged booked', c.triaged_booked)],
+  closer: (c) => [stat('Calls', c.calls), stat('Showed', c.showed), stat('Won', c.won), stat('Lost', c.lost), stat('Follow-ups', c.follow_up),
+    stat('No shows', c.no_show), stat('Rescheduled', c.rescheduled), stat('Revenue', money(c.revenue)),
+    c.zero_call_days ? stat('No-call days', c.zero_call_days) : null],
+};
+
+function detail(c) {
+  const extras = [
+    c.sources && c.sources.length ? el('div', { className: 'note' }, el('strong', { textContent: 'Mechanisms: ' }), c.sources.join(', ')) : null,
+    c.hottest_lead ? el('div', { className: 'note' }, el('strong', { textContent: 'Hottest lead: ' }), c.hottest_lead) : null,
+    c.booked_to ? el('div', { className: 'note' }, el('strong', { textContent: 'Booked to: ' }), c.booked_to) : null,
+  ];
+  return el('div', { className: 'detail' },
+    data.single_day ? null : box(`Day by day: ${c.name}`, true, dayTable(c)),
+    box(data.single_day ? 'Reported this day' : 'Totals for the period', false, el('div', { className: 'stats' }, ...OTHER_STATS[c.role](c)), ...extras),
+    c.notes ? box('Notes', false, el('div', { className: 'note', textContent: c.notes })) : null,
+    c.role === 'closer' && c.call_list.length ? box(`Calls (${c.call_list.length})`, true, ...callList(c)) : null);
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+// A setter, dialler or closer sees only their own numbers, nothing to filter.
+const isRep = () => Boolean(window.EOD_USER) && ['setter', 'dialler', 'closer'].includes(window.EOD_USER.role);
+
+function paintControls(d) {
+  for (const b of document.querySelectorAll('.preset')) b.classList.toggle('active', b.dataset.range === d.range);
+  $('#startDate').value = d.start; $('#endDate').value = d.end;
+  $('#startDate').max = d.today;   $('#endDate').max = d.today;
+
+  const roleSel = $('#roleFilter');
+  roleSel.replaceChildren(el('option', { value: '', textContent: 'All roles' }),
+    ...d.all_roles.map(r => el('option', { value: r, textContent: ROLE_LABEL[r] })));
+  roleSel.value = d.filter.role;
+  roleSel.hidden = d.all_roles.length < 2 || isRep();
+
+  // People grouped by role; choosing one narrows to that role too.
+  const personSel = $('#personFilter');
+  personSel.replaceChildren(el('option', { value: '', textContent: 'Everyone' }));
+  for (const role of (d.filter.role ? [d.filter.role] : d.all_roles)) {
+    if (!d.people[role].length) continue;
+    const group = el('optgroup', { label: ROLE_LABEL[role] });
+    for (const name of d.people[role]) group.append(el('option', { value: `${role}|${name}`, textContent: name }));
+    personSel.append(group);
+  }
+  personSel.value = d.filter.person ? `${d.filter.role}|${d.filter.person}` : '';
+  if (d.filter.person && !personSel.value) personSel.selectedIndex = 0;
+  personSel.hidden = isRep();
+  $('#clearFilters').hidden = isRep() || !(d.filter.role || d.filter.person);
+  if (isRep()) document.querySelector('.header__title').textContent = 'My scorecard';
+}
+
+for (const b of document.querySelectorAll('.preset')) {
+  b.onclick = () => { view.range = b.dataset.range; view.start = view.end = ''; load(); };
+}
+const customRange = () => {
+  const s = $('#startDate').value, e = $('#endDate').value;
+  if (!s || !e) return;
+  view.range = ''; view.start = s; view.end = e; load();
+};
+$('#startDate').onchange = customRange;
+$('#endDate').onchange = customRange;
+$('#roleFilter').onchange = (e) => { view.role = e.target.value; view.person = ''; load(); };
+$('#personFilter').onchange = (e) => {
+  const [role, ...rest] = e.target.value.split('|');
+  view.person = rest.join('|');
+  if (view.person) view.role = role;
+  load();
+};
+$('#clearFilters').onclick = () => { view.role = ''; view.person = ''; load(); };
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function render(d) {
+  data = d;
+  CUR = d.currency_symbol || '$';
+  const t = d.team;
+  paintControls(d);
+
+  const long = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  const when = d.single_day
+    ? niceDate(d.start, long) + (d.start === d.today ? ' · today' : '')
+    : `${niceDate(d.start)} to ${niceDate(d.end, { day: 'numeric', month: 'short', year: 'numeric' })} · ${d.days} days`;
+  const who = d.filter.person ? ` · ${d.filter.person}` : d.filter.role ? ` · ${ROLE_LABEL[d.filter.role]} only` : '';
+  $('#subtitle').textContent = when + who;
+
+  $('#teamTitle').textContent = isRep() ? 'My numbers against target for the period' : d.filter.person ? `${d.filter.person} against target for the period` : 'Team against target for the period';
+  $('#team').replaceChildren(...d.team_kpis.map(teamTile));
+
+  const prev = d.previous.start === d.previous.end ? niceDate(d.previous.start) : `${niceDate(d.previous.start)} to ${niceDate(d.previous.end)}`;
+  $('#legend').replaceChildren(
+    stChip('ok'), 'at or above target', stChip('warn'), 'within 30% of it', stChip('crit'), 'further off', stChip('na'), 'no target or nothing to measure',
+    el('span', { textContent: '·  team target = each person’s daily target × people × days' }),
+    el('span', { textContent: `·  the tick on each bar is the target  ·  ▲▼ compare with ${prev}` }));
+
+  const cards = [], missing = [];
+  for (const role of d.roles) {
+    const list = d[{ setter: 'setters', dialler: 'diallers', closer: 'closers' }[role]];
+    cards.push(...list.map(personCard));
+    missing.push(...(d.not_filed[role] || []).map(n => missingCard(role, n)));
+  }
+  const people = $('#people');
+  people.replaceChildren(...cards, ...missing);
+  if (!cards.length && !missing.length) {
+    people.replaceChildren(el('div', { className: 'empty', textContent: `No reports for ${d.single_day ? 'this day' : 'this period'}.` }));
+  }
+
+  // One person selected → their full detail underneath the card.
+  const one = d.filter.person && [...d.setters, ...d.diallers, ...d.closers][0];
+  $('#detail').replaceChildren(one ? detail(one) : '');
+  $('#footer').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+}
+
+async function load() {
+  const qs = new URLSearchParams();
+  if (view.range) qs.set('range', view.range);
+  else if (view.start) { qs.set('start', view.start); qs.set('end', view.end || view.start); }
+  if (view.role) qs.set('role', view.role);
+  if (view.person) qs.set('person', view.person);
+  history.replaceState(null, '', `?${qs}`);
+  try {
+    const d = await (await fetch('/api?action=scorecard_data&' + qs, { cache: 'no-store' })).json();
+    if (d.status !== 'ok') throw new Error(d.message || 'could not load');
+    render(d);
+  } catch (e) {
+    $('#people').replaceChildren(el('div', { className: 'empty', textContent: 'Could not load the scorecard: ' + e.message }));
+  }
+}
+
+// Wait for sign-in so the page knows whose view this is before it draws.
+window.EOD_AUTH.then(load);
+// Reports arrive through the day, keep any view that includes today fresh.
+setInterval(() => { if (data && data.end >= data.today && !document.hidden) load(); }, 60000);
+</script>
+</body>
+</html>

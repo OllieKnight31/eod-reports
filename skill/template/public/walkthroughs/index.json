@@ -1,0 +1,37 @@
+{
+  "voice": "kokoro",
+  "videos": {
+    "sheets": {
+      "title": "Connect Google Sheets",
+      "seconds": 97
+    },
+    "slack": {
+      "title": "Connect Slack",
+      "seconds": 80
+    },
+    "slack-webhooks": {
+      "title": "Slack webhooks",
+      "seconds": 44
+    },
+    "discord": {
+      "title": "Connect Discord",
+      "seconds": 43
+    },
+    "discord-bot": {
+      "title": "Discord with a bot",
+      "seconds": 49
+    },
+    "team": {
+      "title": "Team and @mentions",
+      "seconds": 50
+    },
+    "crm-ghl": {
+      "title": "Connect GoHighLevel",
+      "seconds": 61
+    },
+    "crm-close": {
+      "title": "Connect Close",
+      "seconds": 41
+    }
+  }
+}

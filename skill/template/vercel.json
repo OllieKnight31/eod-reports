@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "functions": {
+    "api/index.js": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/api", "destination": "/api/index.js" },
+    { "source": "/overview", "destination": "/overview.html" },
+    { "source": "/eod", "destination": "/eod.html" },
+    { "source": "/scorecard", "destination": "/scorecard.html" },
+    { "source": "/settings", "destination": "/settings.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/eod-report", "destination": "/eod-report.html" },
+    { "source": "/setter-eod", "destination": "/eod-report.html" },
+    { "source": "/dialler-eod", "destination": "/eod-report.html" },
+    { "source": "/closer-outcome", "destination": "/eod-report.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" },
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    }
+  ]
+}

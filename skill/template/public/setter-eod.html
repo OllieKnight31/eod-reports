@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setter EOD Report</title>
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --bg: #1a1a2e; --bg-card: #16213e; --border: #2a2a4a; --text: #e0e0e0; --text-dim: #8888aa; --green: #2ECC71; --red: #E74C3C; --accent: #2ECC71; }
+  body { font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+  .container { max-width: 600px; margin: 0 auto; }
+  .header { text-align: center; padding: 24px 0 16px; }
+  .header__brand { font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+  .header__title { font-size: 24px; font-weight: 700; }
+  .header__sub { font-size: 13px; color: var(--text-dim); margin-top: 6px; }
+
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  label .req { color: var(--red); }
+  input, select, textarea { width: 100%; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 15px; font-family: inherit; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { min-height: 80px; resize: vertical; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button { width: 100%; padding: 14px; background: var(--accent); color: #0c0c1a; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status { margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center; display: none; }
+  .status.ok  { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); color: var(--green); }
+  .status.err { background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: var(--red); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header__brand" id="brandName">EOD System</div>
+    <div class="header__title">Setter EOD Report</div>
+    <div class="header__sub">Submit your end-of-day numbers.</div>
+  </div>
+
+  <form id="form">
+    <div class="form-group"><label>Setter Name <span class="req">*</span></label><input name="setter" required></div>
+    <div class="grid-2">
+      <div class="form-group"><label>Date <span class="req">*</span></label><input type="date" name="date" required></div>
+      <div class="form-group"><label>Lead Source <span class="req">*</span></label><select name="lead_source" id="leadSource" required></select></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group"><label>Messages Sent</label><input type="number" name="messages_sent" min="0" value="0"></div>
+      <div class="form-group"><label>Outbounds</label><input type="number" name="outbounds" min="0" value="0"></div>
+      <div class="form-group"><label>Inbounds</label><input type="number" name="inbounds" min="0" value="0"></div>
+      <div class="form-group"><label>Follow-ups</label><input type="number" name="followups" min="0" value="0"></div>
+      <div class="form-group"><label>Calls Proposed</label><input type="number" name="calls_proposed" min="0" value="0"></div>
+      <div class="form-group"><label>Calls Booked</label><input type="number" name="calls_booked" min="0" value="0"></div>
+      <div class="form-group"><label>New Followers</label><input type="number" name="new_followers" min="0" value="0"></div>
+      <div class="form-group"><label>Qualified (ICP)</label><input type="number" name="qualified_followers" min="0" value="0"></div>
+    </div>
+
+    <div class="form-group"><label>Hottest Lead</label><input name="hottest_lead" placeholder="Name or @handle"></div>
+    <div class="form-group"><label>Hit KPIs?</label><select name="hit_kpis"><option value="">Select</option><option>Yes</option><option>No</option><option>Partial</option></select></div>
+    <div class="form-group"><label>Notes</label><textarea name="notes" placeholder="What went well? What didn't? Blockers?"></textarea></div>
+
+    <button type="submit" id="submitBtn">Submit EOD Report</button>
+    <div id="status" class="status"></div>
+  </form>
+</div>
+
+<script>
+const API = '/api';
+
+async function bootstrap() {
+  try {
+    const r = await fetch(API + '?action=config', { cache: 'no-store' });
+    const cfg = await r.json();
+    if (cfg && cfg.brand) {
+      document.getElementById('brandName').textContent = cfg.brand.name || 'EOD System';
+      if (cfg.brand.color) document.documentElement.style.setProperty('--accent', cfg.brand.color);
+      document.title = `${cfg.brand.name || 'EOD System'}, Setter EOD`;
+    }
+    const sel = document.getElementById('leadSource');
+    sel.innerHTML = (cfg.lead_sources || ['Webinar']).map(s => `<option>${s}</option>`).join('');
+  } catch (e) { /* keep defaults */ }
+  document.querySelector('input[name=date]').value = new Date().toISOString().slice(0, 10);
+}
+bootstrap();
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const status = document.getElementById('status');
+  status.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    const r = await fetch(API + '?source=setter_eod', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await r.json();
+    if (json.status !== 'received') throw new Error(json.message || 'submission failed');
+    status.className = 'status ok'; status.textContent = '✓ EOD logged. Thanks!'; status.style.display = 'block';
+    e.target.reset();
+    document.querySelector('input[name=date]').value = new Date().toISOString().slice(0, 10);
+  } catch (err) {
+    status.className = 'status err'; status.textContent = '✗ ' + err.message; status.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Submit EOD Report';
+  }
+});
+</script>
+</body>
+</html>
